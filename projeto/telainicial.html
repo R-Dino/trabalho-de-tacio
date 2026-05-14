@@ -242,6 +242,7 @@ table th{
 <body>
 
 <!-- BOTÃO MENU -->
+
 <button class="menu-toggle" onclick="toggleMenu()">
     <i class="fa fa-bars"></i>
 </button>
@@ -254,11 +255,13 @@ table th{
     </div>
 
     <ul class="menu">
+        
         <li><a href="dashboard.html"><i class="fa fa-house"></i> Dashboard</a></li>
         <li><a href="produtos.html"><i class="fa fa-box"></i> Produtos</a></li>
         <li><a href="estoque.html"><i class="fa fa-warehouse"></i> Estoque</a></li>
         <li><a href="fornecedores.html"><i class="fa fa-truck"></i> Fornecedores</a></li>
         <li><a href="relatorios.html"><i class="fa fa-file"></i> Relatórios</a></li>
+        <li><a href="configuracoes.html" onclick="abrirConfiguracoes"></i> Configurações</a></li>
     </ul>
 
 </div>
@@ -468,7 +471,310 @@ function pesquisarProduto(){
 
 }
 
+
+document.getElementById('form-register').onsubmit = function(e) {
+
+    e.preventDefault();
+
+    const nome =
+    document.getElementById('r-name').value;
+
+    const email =
+    document.getElementById('r-email').value;
+
+    const password =
+    document.getElementById('r-pass').value;
+
+    /* SALVAR USUÁRIO */
+
+    const usuario = {
+
+        nome: nome,
+        email: email,
+        senha: password
+
+    };
+
+    localStorage.setItem(
+        email,
+        JSON.stringify(usuario)
+    );
+
+    alert("Cadastro realizado com sucesso!");
+
+    /* ENTRAR AUTOMATICAMENTE */
+
+    localStorage.setItem(
+        "usuarioLogado",
+        JSON.stringify(usuario)
+    );
+
+    /* ABRIR TELA INICIAL */
+
+    window.location.href =
+    "telainicial.html";
+
+};
+
+/* LOGIN */
+
+document.getElementById('form-login').onsubmit = function(e) {
+
+    e.preventDefault();
+
+    const email =
+    document.getElementById('l-email').value;
+
+    const senha =
+    document.getElementById('l-pass').value;
+
+    const usuarioSalvo =
+    localStorage.getItem(email);
+
+    if(usuarioSalvo === null){
+
+        alert("Usuário não encontrado!");
+
+        switchTab('register');
+
+        return;
+    }
+
+    const usuario =
+    JSON.parse(usuarioSalvo);
+
+    if(usuario.senha !== senha){
+
+        alert("Senha incorreta!");
+
+        return;
+    }
+
+    /* SALVAR LOGIN */
+
+    localStorage.setItem(
+        "usuarioLogado",
+        JSON.stringify(usuario)
+    );
+
+    alert("Login realizado com sucesso!");
+
+    /* ABRIR TELA INICIAL */
+
+    window.location.href =
+    "telainicial.html";
+
+};
 </script>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Itens - ALMOX</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* CSS BASE (Mantendo seu padrão) */
+        *{ margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
+        body{ background:#f1f5f9; color: #1e293b; }
+
+        /* MENU LATERAL (SEU PADRÃO) */
+        .menu-toggle{
+            position:fixed; top:15px; left:15px; z-index:1000; border:none;
+            background:#2563eb; color:white; width:45px; height:45px; border-radius:8px; cursor:pointer; font-size:20px;
+        }
+        .sidebar{
+            width:250px; height:100vh; background:#0f172a; color:white; padding:20px;
+            position:fixed; left:-250px; top:0; transition:0.4s; z-index:999;
+        }
+        .sidebar.active{ left:0; }
+        .logo{ text-align:center; margin-bottom:40px; }
+        .logo h2{ color:#38bdf8; }
+        .menu{ list-style:none; }
+        .menu li{ margin:15px 0; }
+        .menu a{
+            color:white; text-decoration:none; display:flex; align-items:center; gap:10px;
+            padding:12px; border-radius:8px; transition:0.3s;
+        }
+        .menu a:hover{ background:#1e293b; }
+
+        /* CONTEÚDO PRINCIPAL */
+        .main{ width:100%; padding:20px; transition: 0.4s; margin-top: 60px;}
+        
+        .header-cadastro {
+            background: white; padding: 20px; border-radius: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+
+        .status-badge {
+            background: #ef4444; color: white; padding: 5px 12px;
+            border-radius: 6px; font-size: 12px; font-weight: bold;
+        }
+
+        /* BOX DE CADASTRO */
+        .cadastro-box {
+            background: white; padding: 30px; border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        .input-group label { font-weight: bold; font-size: 14px; color: #64748b; }
+        .input-group input, .input-group select, .input-group textarea {
+            padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none;
+        }
+
+        /* GESTÃO DE IMAGEM */
+        .image-upload {
+            border: 2px dashed #cbd5e1;
+            padding: 20px;
+            text-align: center;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .image-upload:hover { border-color: #2563eb; background: #f8fafc; }
+        .image-preview { 
+            width: 100px; height: 100px; object-fit: cover; 
+            border-radius: 8px; display: none; margin: 10px auto; 
+        }
+
+        /* BOTÕES */
+        .btn-group { margin-top: 30px; display: flex; gap: 10px; }
+        .btn {
+            padding: 12px 25px; border: none; border-radius: 8px;
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-secondary { background: #e2e8f0; color: #475569; }
+
+    </style>
+</head>
+<body>
+
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <i class="fa fa-bars"></i>
+    </button>
+
+    <div class="sidebar" id="sidebar">
+        <div class="logo"><h2>ALMOX</h2></div>
+        <ul class="menu">
+            <li><a href="telainicial.html"><i class="fa fa-house"></i> Dashboard</a></li>
+            <li><a href="produtos.html"><i class="fa fa-box"></i> Produtos</a></li>
+            <li><a href="estoque.html"><i class="fa fa-warehouse"></i> Estoque</a></li>
+            <li><a href="configuracoes.html"><i class="fa fa-gear"></i> Configurações</a></li>
+        </ul>
+    </div>
+
+    <div class="main">
+        <div class="header-cadastro">
+            <div>
+                <h1 style="font-size: 20px;"><i class="fa fa-edit"></i> Tela de Cadastro de Itens</h1>
+                <p style="color: #64748b; font-size: 14px;">Inventário Geral</p>
+            </div>
+            <span class="status-badge">EM ANÁLISE</span>
+        </div>
+
+        <div class="cadastro-box">
+            <form id="formCadastro">
+                
+                <div class="input-group">
+                    <label>Foto do Produto (Conferência Visual)</label>
+                    <div class="image-upload" onclick="document.getElementById('imgInp').click()">
+                        <i class="fa fa-camera fa-2x" style="color: #cbd5e1;"></i>
+                        <p>Clique para fazer upload da foto</p>
+                        <input type="file" id="imgInp" hidden accept="image/*">
+                        <img id="preview" src="#" alt="Preview" class="image-preview">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Nome do Produto</label>
+                        <input type="text" placeholder="Ex: Martelo de Aço">
+                    </div>
+                    <div class="input-group">
+                        <label>SKU / Código Único</label>
+                        <input type="text" placeholder="REF-123456">
+                    </div>
+                    <div class="input-group">
+                        <label>Categoria</label>
+                        <select>
+                            <option>Ferramentas</option>
+                            <option>Consumíveis</option>
+                            <option>EPIs</option>
+                            <option>Escritório</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Unidade de Medida</label>
+                        <select>
+                            <option>Unidade (un)</option>
+                            <option>Quilo (kg)</option>
+                            <option>Metro (m)</option>
+                            <option>Litro (l)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Localização Física</label>
+                        <input type="text" placeholder="Ex: Corredor A, Prateleira 3">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Preço de Custo (R$)</label>
+                        <input type="number" step="0.01" placeholder="0,00">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Descrição Detalhada</label>
+                    <textarea rows="4" placeholder="Adicione uma descrição mais detalhada..."></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="salvarProduto()">
+                        <i class="fa fa-save"></i> Adicionar Item ao Inventário
+                    </button>
+                    <button type="reset" class="btn btn-secondary">
+                        Limpar Campos
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu(){
+            document.getElementById("sidebar").classList.toggle("active");
+        }
+
+        // Lógica de Preview da Imagem
+        const imgInp = document.getElementById('imgInp');
+        const preview = document.getElementById('preview');
+
+        imgInp.onchange = evt => {
+            const [file] = imgInp.files;
+            if (file) {
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+            }
+        }
+
+        function salvarProduto() {
+            alert("Item cadastrado com sucesso seguindo os requisitos do checklist!");
+            // Aqui você integraria com sua tabela de estoque
+        }
+    </script>
+</body>
+</html>
 
 </body>
 </html>

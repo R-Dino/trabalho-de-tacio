@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Fornecedores</title>
+<title>Almoxarifado Funcional</title>
 
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,24 +19,8 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
 }
 
 body{
+    display:flex;
     background:#f1f5f9;
-}
-
-/* BOTÃO MENU */
-
-.menu-toggle{
-    position:fixed;
-    top:15px;
-    left:15px;
-    z-index:1000;
-    border:none;
-    background:#2563eb;
-    color:white;
-    width:45px;
-    height:45px;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:20px;
 }
 
 /* MENU */
@@ -48,14 +32,8 @@ body{
     color:white;
     padding:20px;
     position:fixed;
-    left:-250px;
-    top:0;
-    transition:0.4s;
-    z-index:999;
-}
-
-.sidebar.active{
     left:0;
+    top:0;
 }
 
 .logo{
@@ -90,10 +68,11 @@ body{
     background:#1e293b;
 }
 
-/* CONTEÚDO */
+/* MAIN */
 
 .main{
-    width:100%;
+    margin-left:250px;
+    width:calc(100% - 250px);
     padding:20px;
 }
 
@@ -107,7 +86,6 @@ body{
     justify-content:space-between;
     align-items:center;
     box-shadow:0 2px 5px rgba(0,0,0,0.1);
-    margin-top:60px;
 }
 
 .topbar input{
@@ -143,7 +121,7 @@ body{
     font-weight:bold;
 }
 
-/* FORMULÁRIO */
+/* FORM */
 
 .form-container{
     margin-top:30px;
@@ -168,8 +146,6 @@ body{
     border:1px solid #ccc;
     border-radius:8px;
 }
-
-/* BOTÃO */
 
 button{
     margin-top:20px;
@@ -214,8 +190,6 @@ table th{
     background:#e2e8f0;
 }
 
-/* STATUS */
-
 .status{
     padding:5px 10px;
     border-radius:20px;
@@ -223,15 +197,13 @@ table th{
     font-size:12px;
 }
 
-.ativo{
+.disponivel{
     background:green;
 }
 
-.inativo{
+.baixo{
     background:red;
 }
-
-/* AÇÕES */
 
 .acoes button{
     margin:0;
@@ -247,25 +219,19 @@ table th{
 </head>
 <body>
 
-<!-- BOTÃO MENU -->
-<button class="menu-toggle" onclick="toggleMenu()">
-    <i class="fa fa-bars"></i>
-</button>
-
 <!-- MENU -->
-<div class="sidebar" id="sidebar">
+<div class="sidebar">
 
     <div class="logo">
         <h2>ALMOX</h2>
     </div>
 
     <ul class="menu">
-        <li><a href="dashboard.html"><i class="fa fa-house"></i> Dashboard</a></li>
-        <li><a href="produtos.html"><i class="fa fa-box"></i> Produtos</a></li>
-        <li><a href="estoque.html"><i class="fa fa-warehouse"></i> Estoque</a></li>
-        <li><a href="fornecedores.html"><i class="fa fa-truck"></i> Fornecedores</a></li>
-        <li><a href="relatorios.html"><i class="fa fa-file"></i> Relatórios</a></li>
-        <li><a href="configuracoes.html"><i class="fa fa-gear"></i> Configurações</a></li>
+        <li><a href="#"><i class="fa fa-house"></i> Dashboard</a></li>
+        <li><a href="#"><i class="fa fa-box"></i> Produtos</a></li>
+        <li><a href="#"><i class="fa fa-warehouse"></i> Estoque</a></li>
+        <li><a href="#"><i class="fa fa-truck"></i> Fornecedores</a></li>
+        <li><a href="#"><i class="fa fa-file"></i> Relatórios</a></li>
     </ul>
 
 </div>
@@ -275,59 +241,49 @@ table th{
 
     <!-- TOPO -->
     <div class="topbar">
+        <h1>Controle de Almoxarifado</h1>
 
-        <h1>Fornecedores</h1>
-
-      
+        <input type="text"
+        id="pesquisa"
+        placeholder="Pesquisar produto..."
+        onkeyup="pesquisarProduto()">
     </div>
 
     <!-- CARDS -->
     <div class="cards">
 
         <div class="card">
-            <h3>Total de Fornecedores</h3>
-            <p id="totalFornecedores">0</p>
+            <h3>Total de Produtos</h3>
+            <p id="totalProdutos">0</p>
         </div>
 
         <div class="card">
-            <h3>Fornecedores Ativos</h3>
-            <p id="ativos">0</p>
+            <h3>Produtos Baixo Estoque</h3>
+            <p id="baixoEstoque">0</p>
         </div>
 
         <div class="card">
-            <h3>Fornecedores Inativos</h3>
-            <p id="inativos">0</p>
+            <h3>Total em Estoque</h3>
+            <p id="totalEstoque">0</p>
         </div>
 
     </div>
 
-    <!-- FORMULÁRIO -->
+    <!-- FORM -->
     <div class="form-container">
 
-        <h2>Cadastrar Fornecedor</h2>
+        <h2>Adicionar Produto</h2>
 
         <div class="form-grid">
 
-            <input type="text"
-            id="nome"
-            placeholder="Nome da empresa">
+            <input type="text" id="produto" placeholder="Nome do produto">
 
-            <input type="text"
-            id="telefone"
-            placeholder="Telefone">
-
-            <input type="email"
-            id="email"
-            placeholder="E-mail">
-
-            <input type="text"
-            id="cidade"
-            placeholder="Cidade">
+            <input type="number" id="quantidade" placeholder="Quantidade">
 
         </div>
 
-        <button onclick="adicionarFornecedor()">
-            Cadastrar
+        <button onclick="adicionarProduto()">
+            Adicionar Produto
         </button>
 
     </div>
@@ -335,22 +291,18 @@ table th{
     <!-- TABELA -->
     <div class="table-container">
 
-        <h2>Lista de Fornecedores</h2>
+        <h2>Produtos em Estoque</h2>
 
-        <table id="tabelaFornecedores">
+        <table id="tabelaProdutos">
 
             <thead>
-
                 <tr>
                     <th>ID</th>
-                    <th>Empresa</th>
-                    <th>Telefone</th>
-                    <th>E-mail</th>
-                    <th>Cidade</th>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
                     <th>Status</th>
                     <th>Ações</th>
                 </tr>
-
             </thead>
 
             <tbody>
@@ -365,162 +317,120 @@ table th{
 
 <script>
 
-/* MENU */
-
-function toggleMenu(){
-
-    let sidebar =
-    document.getElementById("sidebar");
-
-    sidebar.classList.toggle("active");
-}
-
-/* FORNECEDORES */
-
 let contador = 1;
 
-function adicionarFornecedor(){
+function adicionarProduto(){
 
-    let nome =
-    document.getElementById("nome").value;
+    let produto = document.getElementById("produto").value;
+    let quantidade = document.getElementById("quantidade").value;
 
-    let telefone =
-    document.getElementById("telefone").value;
-
-    let email =
-    document.getElementById("email").value;
-
-    let cidade =
-    document.getElementById("cidade").value;
-
-    if(nome == "" ||
-       telefone == "" ||
-       email == "" ||
-       cidade == ""){
-
+    if(produto === "" || quantidade === ""){
         alert("Preencha todos os campos!");
         return;
     }
 
-    let tabela =
-    document.querySelector("#tabelaFornecedores tbody");
+    let tabela = document.querySelector("#tabelaProdutos tbody");
 
-    let linha =
-    tabela.insertRow();
+    let linha = tabela.insertRow();
+
+    let statusTexto = "";
+    let statusClasse = "";
+
+    if(quantidade <= 20){
+        statusTexto = "Baixo Estoque";
+        statusClasse = "baixo";
+    }else{
+        statusTexto = "Disponível";
+        statusClasse = "disponivel";
+    }
 
     linha.innerHTML = `
         <td>${contador}</td>
-
-        <td>${nome}</td>
-
-        <td>${telefone}</td>
-
-        <td>${email}</td>
-
-        <td>${cidade}</td>
-
+        <td>${produto}</td>
+        <td>${quantidade}</td>
         <td>
-            <span class="status ativo">
-                Ativo
+            <span class="status ${statusClasse}">
+                ${statusTexto}
             </span>
         </td>
-
         <td class="acoes">
-
-            <button onclick="removerFornecedor(this)">
+            <button onclick="removerProduto(this)">
                 Excluir
             </button>
-
         </td>
     `;
 
     contador++;
 
-    document.getElementById("nome").value = "";
-    document.getElementById("telefone").value = "";
-    document.getElementById("email").value = "";
-    document.getElementById("cidade").value = "";
+    document.getElementById("produto").value = "";
+    document.getElementById("quantidade").value = "";
 
     atualizarCards();
 }
 
-/* REMOVER */
+function removerProduto(botao){
 
-function removerFornecedor(botao){
-
-    let linha =
-    botao.parentElement.parentElement;
+    let linha = botao.parentElement.parentElement;
 
     linha.remove();
 
     atualizarCards();
 }
 
-/* ATUALIZAR */
-
 function atualizarCards(){
 
-    let linhas =
-    document.querySelectorAll("#tabelaFornecedores tbody tr");
+    let linhas = document.querySelectorAll("#tabelaProdutos tbody tr");
 
-    let ativos = 0;
-    let inativos = 0;
+    let totalProdutos = linhas.length;
+
+    let baixoEstoque = 0;
+
+    let totalEstoque = 0;
 
     linhas.forEach(linha => {
 
-        let status =
-        linha.cells[5].innerText;
+        let quantidade =
+        parseInt(linha.cells[2].innerText);
 
-        if(status.includes("Ativo")){
+        totalEstoque += quantidade;
 
-            ativos++;
-
-        }else{
-
-            inativos++;
+        if(quantidade <= 20){
+            baixoEstoque++;
         }
 
     });
 
-    document.getElementById("totalFornecedores").innerText =
-    linhas.length;
+    document.getElementById("totalProdutos").innerText =
+    totalProdutos;
 
-    document.getElementById("ativos").innerText =
-    ativos;
+    document.getElementById("baixoEstoque").innerText =
+    baixoEstoque;
 
-    document.getElementById("inativos").innerText =
-    inativos;
+    document.getElementById("totalEstoque").innerText =
+    totalEstoque;
 }
 
-/* PESQUISA */
-
-function pesquisarFornecedor(){
+function pesquisarProduto(){
 
     let input =
-    document.getElementById("pesquisa")
-    .value
-    .toLowerCase();
+    document.getElementById("pesquisa").value.toLowerCase();
 
     let linhas =
-    document.querySelectorAll("#tabelaFornecedores tbody tr");
+    document.querySelectorAll("#tabelaProdutos tbody tr");
 
     linhas.forEach(linha => {
 
-        let nome =
-        linha.cells[1]
-        .innerText
-        .toLowerCase();
+        let produto =
+        linha.cells[1].innerText.toLowerCase();
 
-        if(nome.includes(input)){
-
+        if(produto.includes(input)){
             linha.style.display = "";
-
         }else{
-
             linha.style.display = "none";
         }
 
     });
+
 }
 
 </script>

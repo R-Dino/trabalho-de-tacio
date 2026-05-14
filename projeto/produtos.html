@@ -240,6 +240,7 @@ table th{
         <li><a href="estoque.html"><i class="fa fa-warehouse"></i> Estoque</a></li>
         <li><a href="fornecedores.html"><i class="fa fa-truck"></i> Fornecedores</a></li>
         <li><a href="relatorios.html"><i class="fa fa-file"></i> Relatórios</a></li>
+        <li><a href="configuracoes.html"><i class="fa fa-gear"></i> Configurações</a></li>
     </ul>
 
 </div>
@@ -445,6 +446,187 @@ function pesquisarProduto(){
 }
 
 </script>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta e Relatórios - ALMOX</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <style>
+        *{ margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
+        body{ background:#f1f5f9; color: #1e293b; }
+
+        /* MENU LATERAL */
+        .menu-toggle{
+            position:fixed; top:15px; left:15px; z-index:1000; border:none;
+            background:#2563eb; color:white; width:45px; height:45px; border-radius:8px; cursor:pointer; font-size:20px;
+        }
+        .sidebar{
+            width:250px; height:100vh; background:#0f172a; color:white; padding:20px;
+            position:fixed; left:-250px; top:0; transition:0.4s; z-index:999;
+        }
+        .sidebar.active{ left:0; }
+        .logo{ text-align:center; margin-bottom:40px; }
+        .logo h2{ color:#38bdf8; }
+        .menu{ list-style:none; }
+        .menu li{ margin:15px 0; }
+        .menu a{ color:white; text-decoration:none; display:flex; align-items:center; gap:10px; padding:12px; border-radius:8px; transition:0.3s; }
+        .menu a:hover{ background:#1e293b; }
+
+        /* CONTEÚDO */
+        .main{ width:100%; padding:20px; margin-top: 60px; }
+        
+        .header-rel {
+            background: white; padding: 20px; border-radius: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+
+        /* FILTROS DE BUSCA */
+        .filter-section {
+            background: white; padding: 20px; border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;
+            align-items: flex-end;
+        }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-group label { font-weight: bold; font-size: 13px; color: #64748b; }
+        .input-group input, .input-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; }
+
+        .btn-search { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* TABELA DE STATUS */
+        .table-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 14px; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+
+        /* CORES DE STATUS (CHECKLIST) */
+        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .status-ok { background: #dcfce7; color: #15803d; } /* Verde - Normal */
+        .status-critico { background: #fef9c3; color: #854d0e; } /* Amarelo - Crítico */
+        .status-zerado { background: #fee2e2; color: #b91c1c; } /* Vermelho - Zerado */
+
+        /* EXPORTAÇÃO */
+        .export-group { display: flex; gap: 10px; }
+        .btn-export {
+            padding: 8px 15px; border-radius: 6px; border: 1px solid #cbd5e1;
+            background: white; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: 0.3s;
+        }
+        .btn-export:hover { background: #f8fafc; border-color: #2563eb; color: #2563eb; }
+
+    </style>
+</head>
+<body>
+
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <i class="fa fa-bars"></i>
+    </button>
+
+    <div class="sidebar" id="sidebar">
+        <div class="logo"><h2>ALMOX</h2></div>
+        <ul class="menu">
+            <li><a href="dashboard.html"><i class="fa fa-house"></i> Dashboard</a></li>
+            <li><a href="produtos.html"><i class="fa fa-box"></i> Produtos</a></li>
+            <li><a href="estoque.html"><i class="fa fa-arrow-right-arrow-left"></i> Movimentação</a></li>
+            <li><a href="relatorios.html"><i class="fa fa-chart-line"></i> Relatórios</a></li>
+            <li><a href="configuracoes.html"><i class="fa fa-gear"></i> Configurações</a></li>
+        </ul>
+    </div>
+
+    <div class="main">
+        <div class="header-rel">
+            <div>
+                <h1>Consulta e Relatórios</h1>
+                <p style="color: #64748b;">Análise de dados e exportação de inventário</p>
+            </div>
+            <div class="export-group">
+                <button class="btn-export" onclick="alert('Exportando PDF...')"><i class="fa fa-file-pdf"></i> PDF</button>
+                <button class="btn-export" onclick="alert('Exportando Excel...')"><i class="fa fa-file-excel"></i> Excel</button>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <div class="input-group">
+                <label>Nome ou SKU</label>
+                <input type="text" placeholder="Pesquisar item...">
+            </div>
+            <div class="input-group">
+                <label>Categoria</label>
+                <select>
+                    <option>Todas</option>
+                    <option>Ferramentas</option>
+                    <option>EPIs</option>
+                    <option>Escritório</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Status</label>
+                <select>
+                    <option>Todos</option>
+                    <option>Estoque Baixo</option>
+                    <option>Zerado</option>
+                </select>
+            </div>
+            <button class="btn-search"><i class="fa fa-filter"></i> Filtrar</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>SKU</th>
+                        <th>Localização</th>
+                        <th>Qtd Atual</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Martelo de Aço 500g</td>
+                        <td>FER-088</td>
+                        <td>A-12</td>
+                        <td>45</td>
+                        <td><span class="status-pill status-ok">NORMAL</span></td>
+                        <td><i class="fa fa-eye" style="cursor:pointer; color:#2563eb"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Luva Nitrílica (M)</td>
+                        <td>EPI-012</td>
+                        <td>B-05</td>
+                        <td>5</td>
+                        <td><span class="status-pill status-critico">ESTOQUE CRÍTICO</span></td>
+                        <td><i class="fa fa-eye" style="cursor:pointer; color:#2563eb"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Trena Métrica 5m</td>
+                        <td>FER-102</td>
+                        <td>A-02</td>
+                        <td>0</td>
+                        <td><span class="status-pill status-zerado">ESTOQUE ZERADO</span></td>
+                        <td><i class="fa fa-eye" style="cursor:pointer; color:#2563eb"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Papel A4 (Resma)</td>
+                        <td>ESC-440</td>
+                        <td>C-01</td>
+                        <td>12</td>
+                        <td><span class="status-pill status-ok">NORMAL</span></td>
+                        <td><i class="fa fa-eye" style="cursor:pointer; color:#2563eb"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu(){ document.getElementById("sidebar").classList.toggle("active"); }
+    </script>
+</body>
+</html>
 </body>
 </html>
