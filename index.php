@@ -63,24 +63,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clínica Fision+ | Login e Cadastro</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>ALMOX | Login e Cadastro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --primary-color: #00796b;
-            --secondary-color: #004d40;
-            --bg-gradient: linear-gradient(135deg, #e0f2f1 0%, #b2ebf2 100%);
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --dark-color: #0f172a;
+            --accent-color: #38bdf8;
+            --bg-color: #f1f5f9;
             --white: #ffffff;
-            --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             --transition: all 0.3s ease;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
         body {
-            background: var(--bg-gradient);
+            background: var(--bg-color);
+            color: var(--text-color);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -91,8 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .auth-card {
             background-color: var(--white);
             width: 100%;
-            max-width: 450px;
-            border-radius: 16px;
+            max-width: 420px;
+            border-radius: 12px;
             box-shadow: var(--shadow);
             overflow: hidden;
             animation: fadeIn 0.5s ease-out;
@@ -104,39 +108,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         header {
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
-                url('imagem.png');
-            background-size: cover;
-            background-position: center;
-             background-repeat: no-repeat;
-
+            background: var(--dark-color);
             color: var(--white);
-            padding: 1.5rem 1rem;
+            padding: 2.5rem 1.5rem;
             text-align: center;
         }
 
-        .clinic-logo {
-            width: 150px;
-            height: 150px;
-            background: rgba(255,255,255,0.2);
-            margin: 0 auto 10px;
-            border-radius: 50%;
-            border: 2px solid white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
+        .logo h2 {
+            color: var(--accent-color);
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
         }
-        .clinic-logo img { width: 100%; height: 100%; object-fit: cover; }
 
-        header h1 { font-size: 1.8rem; margin-bottom: 5px; }
-        header p { font-size: 0.9rem; opacity: 0.9; }
+        header p {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
 
-        .tabs { display: flex; background: #f8f9fa; border-bottom: 1px solid #eee; }
+        .tabs { display: flex; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
 
         .tab-btn {
             flex: 1; padding: 15px; border: none; background: none;
-            cursor: pointer; font-weight: 600; color: #666; transition: var(--transition);
+            cursor: pointer; font-weight: 600; color: var(--text-muted); transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary-color);
         }
 
         .tab-btn.active {
@@ -146,64 +145,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .form-container { padding: 2rem; }
         form { display: grid; gap: 1.2rem; }
-        .field { display: flex; flex-direction: column; gap: 5px; }
-        label { font-size: 0.85rem; font-weight: 700; color: #444; }
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        label { font-size: 0.85rem; font-weight: bold; color: var(--text-muted); }
 
         input {
-            padding: 12px; border: 1.5px solid #ddd; border-radius: 8px;
-            font-size: 1rem; transition: var(--transition);
+            padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+            font-size: 1rem; color: var(--text-color); transition: var(--transition);
+            background: #f8fafc;
         }
 
         input:focus {
-            outline: none; border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 121, 107, 0.1);
+            outline: none; border-color: var(--primary-color); background: var(--white);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .form-utils {
             display: flex; justify-content: space-between;
-            align-items: center; font-size: 0.8rem;
+            align-items: center; font-size: 0.85rem; color: var(--text-muted);
         }
 
         .btn-submit {
             background-color: var(--primary-color); color: var(--white);
             padding: 14px; border: none; border-radius: 8px;
             font-weight: bold; font-size: 1rem; cursor: pointer; transition: var(--transition);
+            margin-top: 5px;
         }
 
-        .divider {
-            text-align: center; margin: 1.5rem 0; position: relative;
-            font-size: 0.8rem; color: #aaa;
+        .btn-submit:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
         }
-        .divider::before, .divider::after {
-            content: ""; position: absolute; top: 50%; width: 35%; border-bottom: 1px solid #eee;
-        }
-        .divider::before { left: 0; }
-        .divider::after { right: 0; }
 
         .hidden { display: none; }
 
         .alert {
-            padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; text-align: center;
+            padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; text-align: center; font-weight: 500;
         }
-        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background-color: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+        .alert-success { background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
 
-        @media (max-width: 480px) {
-            .form-container { padding: 1.2rem; }
-            .form-utils { flex-direction: column; gap: 10px; align-items: flex-start; }
-            header h1 { font-size: 1.5rem; }
-        }
     </style>
 </head>
 <body>
 
 <main class="auth-card">
     <header>
-        <div class="clinic-logo">
-            <img src="imagem.png" alt="Logo Clínica">
+        <div class="logo">
+            <h2>ALMOX</h2>
         </div>
-        <h1>Almoxarifado</h1>
-        <p>Sistema do Almoxarifado</p>
+        <p>Sistema de Gerenciamento</p>
     </header>
 
     <nav class="tabs">
@@ -231,18 +221,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             
             <div class="form-utils">
-                <label><input type="checkbox"> Lembrar acesso</label>
-                <a href="#" style="color: var(--primary-color); text-decoration: none;">Esqueceu a senha?</a>
+                <label style="font-weight: normal; cursor: pointer;"><input type="checkbox"> Lembrar de mim</label>
             </div>
 
-            <button type="submit" class="btn-submit">Acessar</button>
+            <button type="submit" class="btn-submit">Entrar no Sistema</button>
         </form>
 
         <form id="form-register" class="hidden" method="POST" action="index.php">
             <input type="hidden" name="acao" value="register">
             <div class="field">
                 <label for="r-name">Nome Completo</label>
-                <input type="text" id="r-name" name="nome" placeholder="Como deseja ser chamado?" required>
+                <input type="text" id="r-name" name="nome" placeholder="Seu nome" required>
             </div>
             <div class="field">
                 <label for="r-email">E-mail</label>
@@ -252,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="r-pass">Crie uma Senha</label>
                 <input type="password" id="r-pass" name="senha" minlength="6" placeholder="Mín. 6 caracteres" required>
             </div>
-            <button type="submit" class="btn-submit">FINALIZAR CADASTRO</button>
+            <button type="submit" class="btn-submit">Criar Conta</button>
         </form>
     </div>
 </main>
@@ -266,8 +255,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         document.getElementById('form-register').classList.toggle('hidden', isLogin);
     }
 
-    // Se houve sucesso no cadastro ou usuário escolheu registrar, pode manter a aba de registro ativa se necessário
-    // Aqui usamos uma heurística simples: se foi acao=register e houve erro, reabrir a aba.
     <?php if (isset($_POST['acao']) && $_POST['acao'] === 'register' && !empty($erro)): ?>
         switchTab('register');
     <?php endif; ?>
