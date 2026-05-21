@@ -7,13 +7,11 @@ if (!isset($_SESSION['usuario_id'])) {
     exit;
 }
 
-// Estatísticas para os cards
 $totalProdutos = $pdo->query("SELECT COUNT(*) FROM produtos")->fetchColumn() ?: 0;
 $totalEstoque = $pdo->query("SELECT SUM(quantidade) FROM produtos")->fetchColumn() ?: 0;
 $baixoEstoque = $pdo->query("SELECT COUNT(*) FROM produtos WHERE status = 'Baixo' OR status = 'Zerado'")->fetchColumn() ?: 0;
 $totalFornecedores = $pdo->query("SELECT COUNT(*) FROM fornecedores")->fetchColumn() ?: 0;
 
-// Atividades Recentes (Movimentações)
 $movimentacoes = $pdo->query("
     SELECT m.*, p.nome as produto_nome 
     FROM movimentacoes m 
@@ -21,7 +19,6 @@ $movimentacoes = $pdo->query("
     ORDER BY m.data_movimentacao DESC LIMIT 4
 ")->fetchAll();
 
-// Últimos Produtos
 $ultimosProdutos = $pdo->query("
     SELECT p.*, c.nome as categoria_nome 
     FROM produtos p 
@@ -44,7 +41,6 @@ $ultimosProdutos = $pdo->query("
 *{ margin:0; padding:0; box-sizing:border-box; font-family:Arial, Helvetica, sans-serif; }
 body{ background:#f1f5f9; }
 
-/* MENU */
 .menu-toggle{ position:fixed; top:15px; left:15px; z-index:1000; border:none; background:#2563eb; color:white; width:45px; height:45px; border-radius:8px; cursor:pointer; font-size:20px; }
 .sidebar{ width:250px; height:100vh; background:#0f172a; color:white; padding:20px; position:fixed; left:-250px; top:0; transition:0.4s; z-index:999; }
 .sidebar.active{ left:0; }
@@ -55,15 +51,12 @@ body{ background:#f1f5f9; }
 .menu a{ color:white; text-decoration:none; display:flex; align-items:center; gap:10px; padding:12px; border-radius:8px; transition:0.3s; }
 .menu a:hover{ background:#1e293b; }
 
-/* MAIN */
 .main{ width:100%; padding:20px; }
 
-/* TOPO */
 .topbar{ background:white; padding:15px 20px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:60px; }
 .usuario{ display:flex; align-items:center; gap:10px; }
 .usuario img{ width:45px; height:45px; border-radius:50%; }
 
-/* CARDS */
 .cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; margin-top:25px; }
 .card{ background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:0.3s; }
 .card:hover{ transform:translateY(-5px); }
@@ -71,7 +64,6 @@ body{ background:#f1f5f9; }
 .card h3{ color:#64748b; }
 .card p{ margin-top:10px; font-size:28px; font-weight:bold; }
 
-/* GRÁFICOS E ATIVIDADES */
 .dashboard-grid{ margin-top:30px; display:grid; grid-template-columns:2fr 1fr; gap:20px; }
 .chart-box, .activity-box{ background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
 .chart{ margin-top:20px; }
@@ -84,14 +76,12 @@ body{ background:#f1f5f9; }
 .vermelho{ width:35%; background:red; }
 .amarelo{ width:50%; background:orange; }
 
-/* ATIVIDADES */
 .activity{ margin-top:20px; }
 .activity-item{ padding:15px; border-bottom:1px solid #ddd; }
 .activity-item:last-child{ border:none; }
 .activity-item h4{ margin-bottom:5px; }
 .activity-item p{ color:#64748b; font-size:14px; }
 
-/* TABELA */
 .table-container{ margin-top:30px; background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
 table{ width:100%; border-collapse:collapse; margin-top:20px; }
 table th, table td{ padding:12px; border-bottom:1px solid #ddd; text-align:left; }
@@ -105,7 +95,6 @@ table th{ background:#e2e8f0; }
     .dashboard-grid{ grid-template-columns: 1fr; }
 }
 
-        /* MODO ESCURO GLOBAL */
         body.dark-mode { background: #0f172a; color: #f1f5f9; }
         body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .form-container, body.dark-mode .report-card, body.dark-mode .chart-box, body.dark-mode .activity-box { background: #1e293b; box-shadow: none; color: #f1f5f9; }
         body.dark-mode .topbar h1, body.dark-mode .form-container h2, body.dark-mode .table-container h2 { color: #f1f5f9; }
@@ -116,7 +105,6 @@ table th{ background:#e2e8f0; }
         body.dark-mode .activity-item { border-bottom: 1px solid #334155; }
         body.dark-mode .activity-item p { color: #94a3b8; }
         
-        /* Ajustes extras para Tela de Login */
         body.dark-mode .auth-card { background: #1e293b; box-shadow: none; }
         body.dark-mode header { background: #0f172a; border-bottom: 1px solid #334155; }
         body.dark-mode .tabs { background: #1e293b; border-bottom: 1px solid #334155; }
@@ -158,7 +146,7 @@ table th{ background:#e2e8f0; }
         <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
         <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
         <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
-        <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
+        <?php if (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin'): ?>
         <li><a href="usuarios.php"><i class="fa fa-users"></i> Usuários</a></li>
         <li><a href="relatorios.php"><i class="fa fa-file"></i> Relatórios</a></li>
         <li><a href="configuracoes.php"><i class="fa fa-gear"></i> Configurações</a></li>
@@ -173,7 +161,7 @@ table th{ background:#e2e8f0; }
             <img src="https://i.pravatar.cc/100" alt="Usuário">
             <div>
                 <strong><?= htmlspecialchars($_SESSION['usuario_nome']) ?></strong>
-                <p>Almoxarifado Central <?= $_SESSION['nivel_acesso'] === 'admin' ? '<span style="color:var(--primary-color);font-weight:bold;">[Admin]</span>' : '' ?></p>
+                <p>Almoxarifado Central <?= (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin') ? '<span style="color:var(--primary-color);font-weight:bold;">[Admin]</span>' : '' ?></p>
             </div>
         </div>
     </div>

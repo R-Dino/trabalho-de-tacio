@@ -285,7 +285,6 @@ $ultimosProdutos = $stmt->fetchAll();
         .baixo { background-color: #f59e0b; }
         .zerado { background-color: #ef4444; }
 
-<<<<<<< HEAD
         /* RESPONSIVIDADE */
         @media (max-width: 992px) {
             .sidebar {
@@ -306,34 +305,7 @@ $ultimosProdutos = $stmt->fetchAll();
                 margin-bottom: 24px;
             }
         }
-    </style>
-=======
-.status{
-    padding:5px 10px;
-    border-radius:20px;
-    color:white;
-    font-size:12px;
-}
-
-.disponivel{
-    background:green;
-}
-
-.baixo{
-    background:orange;
-}
-.zerado{
-    background:red;
-}
-
-.btn-logout {
-    background: #ef4444; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;
-}
-.btn-logout:hover {
-    background: #dc2626;
-}
-
-
+        
         /* MODO ESCURO GLOBAL */
         body.dark-mode { background: #0f172a; color: #f1f5f9; }
         body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .form-container, body.dark-mode .report-card, body.dark-mode .chart-box, body.dark-mode .activity-box { background: #1e293b; box-shadow: none; color: #f1f5f9; }
@@ -345,7 +317,6 @@ $ultimosProdutos = $stmt->fetchAll();
         body.dark-mode .activity-item { border-bottom: 1px solid #334155; }
         body.dark-mode .activity-item p { color: #94a3b8; }
         
-        /* Ajustes extras para Tela de Login */
         body.dark-mode .auth-card { background: #1e293b; box-shadow: none; }
         body.dark-mode header { background: #0f172a; border-bottom: 1px solid #334155; }
         body.dark-mode .tabs { background: #1e293b; border-bottom: 1px solid #334155; }
@@ -355,94 +326,53 @@ $ultimosProdutos = $stmt->fetchAll();
         body.dark-mode .form-utils { color: #94a3b8; }
         body.dark-mode .alert-error { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
         body.dark-mode .alert-success { background: #052e16; border-color: #14532d; color: #86efac; }
-</style>
->>>>>>> 81a7f9b176d2662fcd675e03b2180fbfeff8468b
+    </style>
 </head>
 <body>
-<style>
-.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
-.toast { background: #333; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards; }
-.toast.sucesso { background: #10b981; }
-.toast.erro { background: #ef4444; }
-@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; display: none; } }
-</style>
-<div class="toast-container">
-    <?php if (isset($_SESSION['msg_sucesso'])): ?>
-        <div class="toast sucesso"><i class="fa fa-check-circle"></i> <?= htmlspecialchars($_SESSION['msg_sucesso']) ?></div>
-        <?php unset($_SESSION['msg_sucesso']); ?>
-    <?php endif; ?>
-    <?php if (isset($_SESSION['msg_erro'])): ?>
-        <div class="toast erro"><i class="fa fa-exclamation-circle"></i> <?= htmlspecialchars($_SESSION['msg_erro']) ?></div>
-        <?php unset($_SESSION['msg_erro']); ?>
-    <?php endif; ?>
-</div>
+    <style>
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+    .toast { background: #333; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards; }
+    .toast.sucesso { background: #10b981; }
+    .toast.erro { background: #ef4444; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; display: none; } }
+    </style>
+    <div class="toast-container">
+        <?php if (isset($_SESSION['msg_sucesso'])): ?>
+            <div class="toast sucesso"><i class="fa fa-check-circle"></i> <?= htmlspecialchars($_SESSION['msg_sucesso']) ?></div>
+            <?php unset($_SESSION['msg_sucesso']); ?>
+        <?php endif; ?>
+        <?php if (isset($_SESSION['msg_erro'])): ?>
+            <div class="toast erro"><i class="fa fa-exclamation-circle"></i> <?= htmlspecialchars($_SESSION['msg_erro']) ?></div>
+            <?php unset($_SESSION['msg_erro']); ?>
+        <?php endif; ?>
+    </div>
 
     <button class="menu-toggle" onclick="toggleMenu()" aria-label="Abrir menu">
         <i class="fa fa-bars"></i>
     </button>
 
-<<<<<<< HEAD
     <aside class="sidebar" id="sidebar">
         <div class="logo">
             <h2>ALMOX</h2>
-=======
-<button class="menu-toggle" onclick="toggleMenu()">
-    <i class="fa fa-bars"></i>
-</button>
-
-<!-- MENU -->
-<div class="sidebar" id="sidebar">
-
-    <div class="logo">
-        <h2>ALMOX</h2>
-    </div>
-
-    <ul class="menu">
-        <li><a href="dashboard.php"><i class="fa fa-chart-line"></i> Dashboard</a></li>
-        <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
-        <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
-        <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
-        <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
-        <li><a href="usuarios.php"><i class="fa fa-users"></i> Usuários</a></li>
-        <li><a href="relatorios.php"><i class="fa fa-file"></i> Relatórios</a></li>
-        <li><a href="configuracoes.php"><i class="fa fa-gear"></i> Configurações</a></li>
-        <?php endif; ?>
-    </ul>
-
-</div>
-
-<!-- CONTEÚDO -->
-<div class="main">
-
-    <!-- TOPO -->
-    <div class="topbar">
-        <h1>Olá, <?= htmlspecialchars($_SESSION['usuario_nome']) ?> <?= $_SESSION['nivel_acesso'] === 'admin' ? '<span style="font-size: 14px; background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px; vertical-align: middle;">ADMIN</span>' : '' ?></h1>
-        <a href="logout.php" class="btn-logout"><i class="fa fa-sign-out-alt"></i> Sair</a>
-    </div>
-
-    <!-- CARDS -->
-    <div class="cards">
-
-        <div class="card">
-            <h3>Total de Produtos</h3>
-            <p id="totalProdutos"><?= $totalProdutos ?></p>
->>>>>>> 81a7f9b176d2662fcd675e03b2180fbfeff8468b
         </div>
         <ul class="menu">
-            <li class="active"><a href="dashboard.php"><i class="fa fa-chart-line"></i> Dashboard</a></li>
+            <li class="active"><a href="telainicial.php"><i class="fa fa-home"></i> Início</a></li>
+            <li><a href="dashboard.php"><i class="fa fa-chart-line"></i> Dashboard</a></li>
             <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
             <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
             <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
+            <?php if (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin'): ?>
+            <li><a href="usuarios.php"><i class="fa fa-users"></i> Usuários</a></li>
             <li><a href="relatorios.php"><i class="fa fa-file-alt"></i> Relatórios</a></li>
             <li><a href="configuracoes.php"><i class="fa fa-cog"></i> Configurações</a></li>
+            <?php endif; ?>
         </ul>
     </aside>
 
     <main class="main">
-
         <header class="topbar">
-            <h1>Olá, <?= htmlspecialchars($_SESSION['usuario_nome']) ?> 👋</h1>
+            <h1>Olá, <?= htmlspecialchars($_SESSION['usuario_nome']) ?> <?= (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin') ? '<span style="font-size: 14px; background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px; vertical-align: middle;">ADMIN</span>' : '' ?> 👋</h1>
             <a href="logout.php" class="btn-logout"><i class="fa fa-sign-out-alt"></i> Sair</a>
         </header>
 
@@ -492,7 +422,7 @@ $ultimosProdutos = $stmt->fetchAll();
                         ?>
                         <tr>
                             <td>#<?= $prod['id'] ?></td>
-                            <strong><td><?= htmlspecialchars($prod['nome']) ?></td></strong>
+                            <td><strong><?= htmlspecialchars($prod['nome']) ?></strong></td>
                             <td><?= $prod['quantidade'] ?> u.</td>
                             <td>
                                 <span class="status <?= $classe ?>">
@@ -513,68 +443,18 @@ $ultimosProdutos = $stmt->fetchAll();
                 </tbody>
             </table>
         </section>
-
-<<<<<<< HEAD
     </main>
-=======
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Produto</th>
-                    <th>Quantidade</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <?php foreach($ultimosProdutos as $prod): ?>
-                    <?php
-                        $classe = 'disponivel';
-                        if ($prod['status'] == 'Baixo') $classe = 'baixo';
-                        elseif ($prod['status'] == 'Zerado') $classe = 'zerado';
-                    ?>
-                <tr>
-                    <td><?= $prod['id'] ?></td>
-                    <td><?= htmlspecialchars($prod['nome']) ?></td>
-                    <td><?= $prod['quantidade'] ?></td>
-                    <td>
-                        <span class="status <?= $classe ?>">
-                            <?= htmlspecialchars($prod['status']) ?>
-                        </span>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-                <?php if (empty($ultimosProdutos)): ?>
-                <tr>
-                    <td colspan="4" style="text-align: center;">Nenhum produto cadastrado.</td>
-                </tr>
-                <?php endif; ?>
-            </tbody>
-
-        </table>
-
-    </div>
-
-</div>
-
-<script>
-function toggleMenu(){
-    let sidebar = document.getElementById("sidebar");
-    sidebar.classList.toggle("active");
-}
-
-        window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem("darkMode") === "true") {
-                document.body.classList.add("dark-mode");
-            }
-        });
-</script>
->>>>>>> 81a7f9b176d2662fcd675e03b2180fbfeff8468b
 
     <script>
     function toggleMenu(){
         document.getElementById("sidebar").classList.toggle("active");
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem("darkMode") === "true") {
+            document.body.classList.add("dark-mode");
+        }
+    });
     </script>
 </body>
 </html>

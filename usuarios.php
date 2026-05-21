@@ -8,7 +8,7 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 
 // Proteção para Admin
-if ($_SESSION['nivel_acesso'] !== 'admin') {
+if (!isset($_SESSION['nivel_acesso']) || $_SESSION['nivel_acesso'] !== 'admin') {
     die("Acesso negado. Apenas administradores podem gerenciar usuários.");
 }
 
@@ -138,7 +138,7 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
             <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
             <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
             <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
-            <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
+            <?php if (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin'): ?>
             <li><a href="usuarios.php"><i class="fa fa-users"></i> Usuários</a></li>
             <li><a href="relatorios.php"><i class="fa fa-file"></i> Relatórios</a></li>
             <li><a href="configuracoes.php"><i class="fa fa-gear"></i> Configurações</a></li>

@@ -9,7 +9,7 @@ if (!isset($_SESSION['usuario_id'])) {
 
 // Lidar com a exclusão de movimentação
 if (isset($_GET['excluir'])) {
-    if ($_SESSION['nivel_acesso'] !== 'admin') {
+    if (!isset($_SESSION['nivel_acesso']) || $_SESSION['nivel_acesso'] !== 'admin') {
         die("Acesso negado. Apenas administradores podem excluir.");
     }
     $id = (int)$_GET['excluir'];
@@ -213,7 +213,7 @@ table th{ background:#e2e8f0; }
         <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
         <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
         <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
-        <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
+        <?php if (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin'): ?>
         <li><a href="usuarios.php"><i class="fa fa-users"></i> Usuários</a></li>
         <li><a href="relatorios.php"><i class="fa fa-file"></i> Relatórios</a></li>
         <li><a href="configuracoes.php"><i class="fa fa-gear"></i> Configurações</a></li>
@@ -280,7 +280,7 @@ table th{ background:#e2e8f0; }
                     <th>Quantidade</th>
                     <th>Tipo</th>
                     <th>Data</th>
-                    <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
+                    <?php if (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin'): ?>
                     <th>Ações</th>
                     <?php endif; ?>
                 </tr>
@@ -294,7 +294,7 @@ table th{ background:#e2e8f0; }
                     <td><?= $mov['quantidade'] ?></td>
                     <td><span class="status <?= $classe ?>"><?= htmlspecialchars($mov['tipo']) ?></span></td>
                     <td><?= date('d/m/Y H:i', strtotime($mov['data_movimentacao'])) ?></td>
-                    <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
+                    <?php if (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin'): ?>
                     <td class="acoes">
                         <a href="estoque.php?excluir=<?= $mov['id'] ?>" class="btn-delete" onclick="return confirm('Tem certeza que deseja excluir esta movimentação? Isso reverterá o estoque.');">Excluir</a>
                     </td>

@@ -8,7 +8,7 @@ if (!isset($_SESSION['usuario_id'])) {
 }
 
 // Proteção para Admin
-if ($_SESSION['nivel_acesso'] !== 'admin') {
+if (!isset($_SESSION['nivel_acesso']) || $_SESSION['nivel_acesso'] !== 'admin') {
     die("Acesso negado. Apenas administradores podem acessar as configurações.");
 }
 ?>

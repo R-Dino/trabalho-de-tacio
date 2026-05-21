@@ -24,12 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($usuario && password_verify($senha, $usuario['senha'])) {
                 $_SESSION['usuario_id'] = $usuario['id'];
                 $_SESSION['usuario_nome'] = $usuario['nome'];
-<<<<<<< HEAD
-                header("Location: dashboard.php");
-=======
                 $_SESSION['nivel_acesso'] = $usuario['nivel_acesso'];
-                header("Location: telainicial.php");
->>>>>>> 81a7f9b176d2662fcd675e03b2180fbfeff8468b
+                header("Location: dashboard.php");
                 exit;
             } else {
                 $erro = "E-mail ou senha incorretos.";
