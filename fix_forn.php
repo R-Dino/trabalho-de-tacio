@@ -1,57 +1,72 @@
 <?php
+$content = <<<PHP
+<?php
 session_start();
 require 'db.php';
 
-if (!isset($_SESSION['usuario_id'])) {
+if (!isset(\$_SESSION['usuario_id'])) {
     header("Location: index.php");
     exit;
 }
 
-// Lidar com a exclusão de produto
-if (isset($_GET['excluir'])) {
-    if ($_SESSION['nivel_acesso'] !== 'admin') {
+// Lidar com a exclusão de fornecedor
+if (isset(\$_GET['excluir'])) {
+    if (\$_SESSION['nivel_acesso'] !== 'admin') {
         die("Acesso negado. Apenas administradores podem excluir.");
     }
-    $id = (int)$_GET['excluir'];
-    $stmt = $pdo->prepare("DELETE FROM produtos WHERE id = ?");
-    $stmt->execute([$id]);
-    header("Location: produtos.php");
+    \$id = (int)\$_GET['excluir'];
+    \$stmt = \$pdo->prepare("DELETE FROM fornecedores WHERE id = ?");
+    \$stmt->execute([\$id]);
+    \$_SESSION['msg_sucesso'] = "Fornecedor excluído com sucesso!";
+    header("Location: fornecedores.php");
     exit;
 }
 
-// Lidar com a adição de produto
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'adicionar') {
-    $nome = trim($_POST['nome']);
-    $quantidade = (int)$_POST['quantidade'];
-    $preco = (float)$_POST['preco'];
-    $categoria_id = (int)$_POST['categoria_id'];
+// Lidar com a adição/edição de fornecedor
+if (\$_SERVER['REQUEST_METHOD'] === 'POST' && isset(\$_POST['acao'])) {
+    if (\$_POST['acao'] === 'adicionar') {
+        \$nome = trim(\$_POST['nome']);
+        \$telefone = trim(\$_POST['telefone']);
+        \$email = trim(\$_POST['email']);
+        \$cidade = trim(\$_POST['cidade']);
 
-    if (!empty($nome) && $categoria_id > 0) {
-        $status = 'Disponível';
-        if ($quantidade == 0) {
-            $status = 'Zerado';
-        } elseif ($quantidade <= 20) {
-            $status = 'Baixo';
+        if (!empty(\$nome)) {
+            \$stmt = \$pdo->prepare("INSERT INTO fornecedores (nome, telefone, email, cidade) VALUES (?, ?, ?, ?)");
+            \$stmt->execute([\$nome, \$telefone, \$email, \$cidade]);
+            \$_SESSION['msg_sucesso'] = "Fornecedor cadastrado com sucesso!";
+            header("Location: fornecedores.php");
+            exit;
         }
+    } elseif (\$_POST['acao'] === 'editar') {
+        \$id = (int)\$_POST['id_fornecedor'];
+        \$nome = trim(\$_POST['nome']);
+        \$telefone = trim(\$_POST['telefone']);
+        \$email = trim(\$_POST['email']);
+        \$cidade = trim(\$_POST['cidade']);
 
-        $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco, categoria_id, status) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$nome, $quantidade, $preco, $categoria_id, $status]);
-        header("Location: produtos.php");
-        exit;
+        if (\$id > 0 && !empty(\$nome)) {
+            \$stmt = \$pdo->prepare("UPDATE fornecedores SET nome = ?, telefone = ?, email = ?, cidade = ? WHERE id = ?");
+            \$stmt->execute([\$nome, \$telefone, \$email, \$cidade, \$id]);
+            \$_SESSION['msg_sucesso'] = "Fornecedor atualizado com sucesso!";
+            header("Location: fornecedores.php");
+            exit;
+        }
     }
 }
 
-// Obter categorias para o formulário
-$categorias = $pdo->query("SELECT * FROM categorias ORDER BY nome ASC")->fetchAll();
+// Estatísticas
+\$totalFornecedores = \$pdo->query("SELECT COUNT(*) FROM fornecedores")->fetchColumn() ?: 0;
+\$ativos = \$pdo->query("SELECT COUNT(*) FROM fornecedores WHERE status = 'Ativo'")->fetchColumn() ?: 0;
+\$inativos = \$pdo->query("SELECT COUNT(*) FROM fornecedores WHERE status = 'Inativo'")->fetchColumn() ?: 0;
 
-// Obter produtos para a tabela
-$termo_pesquisa = $_GET['pesquisa'] ?? '';
-if (!empty($termo_pesquisa)) {
-    $stmt = $pdo->prepare("SELECT p.*, c.nome as categoria_nome FROM produtos p LEFT JOIN categorias c ON p.categoria_id = c.id WHERE p.nome LIKE ? ORDER BY p.id DESC");
-    $stmt->execute(["%$termo_pesquisa%"]);
-    $produtos = $stmt->fetchAll();
+// Obter fornecedores para a tabela
+\$termo_pesquisa = \$_GET['pesquisa'] ?? '';
+if (!empty(\$termo_pesquisa)) {
+    \$stmt = \$pdo->prepare("SELECT * FROM fornecedores WHERE nome LIKE ? ORDER BY id DESC");
+    \$stmt->execute(["%\$termo_pesquisa%"]);
+    \$fornecedores = \$stmt->fetchAll();
 } else {
-    $produtos = $pdo->query("SELECT p.*, c.nome as categoria_nome FROM produtos p LEFT JOIN categorias c ON p.categoria_id = c.id ORDER BY p.id DESC")->fetchAll();
+    \$fornecedores = \$pdo->query("SELECT * FROM fornecedores ORDER BY id DESC")->fetchAll();
 }
 ?>
 <!DOCTYPE html>
@@ -59,9 +74,7 @@ if (!empty($termo_pesquisa)) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Página de Produtos</title>
-
+<title>Fornecedores</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
@@ -87,29 +100,34 @@ body{ background:#f1f5f9; }
 .topbar form { display: flex; gap: 10px; }
 .topbar input{ width:300px; padding:10px; border:1px solid #ccc; border-radius:8px; }
 
+/* CARDS */
+.cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; margin-top:25px; }
+.card{ background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+.card h3{ color:#64748b; }
+.card p{ margin-top:10px; font-size:28px; font-weight:bold; }
+
 /* FORMULÁRIO */
 .form-container{ margin-top:30px; background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
 .form-container h2{ margin-bottom:20px; }
 .form-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; }
-.form-grid input, .form-grid select{ padding:12px; border:1px solid #ccc; border-radius:8px; }
+.form-grid input{ padding:12px; border:1px solid #ccc; border-radius:8px; }
 
 button.btn-primary{ margin-top:20px; padding:12px 20px; border:none; border-radius:8px; background:#2563eb; color:white; cursor:pointer; font-weight:bold; transition:0.3s; }
 button.btn-primary:hover{ background:#1d4ed8; }
 
 /* TABELA */
-.table-container{ margin-top:30px; background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; }
+.table-container{ margin-top:30px; background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow-x: auto;}
 table{ width:100%; border-collapse:collapse; margin-top:20px; }
 table th, table td{ padding:12px; border-bottom:1px solid #ddd; text-align:left; }
 table th{ background:#e2e8f0; }
 
 /* STATUS */
 .status{ padding:5px 10px; border-radius:20px; color:white; font-size:12px; }
-.disponivel{ background:green; }
-.baixo{ background:orange; }
-.zerado{ background:red; }
+.ativo{ background:green; }
+.inativo{ background:red; }
 
 /* AÇÕES */
-.acoes a.btn-delete { padding:8px 12px; background:red; color:white; text-decoration:none; border-radius:8px; font-size:14px; }
+.acoes a.btn-delete{ padding:8px 12px; background:red; color:white; text-decoration:none; border-radius:8px; font-size:14px; }
 .acoes a.btn-delete:hover{ background:darkred; }
 
         /* MODO ESCURO GLOBAL */
@@ -145,13 +163,13 @@ table th{ background:#e2e8f0; }
 @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; display: none; } }
 </style>
 <div class="toast-container">
-    <?php if (isset($_SESSION['msg_sucesso'])): ?>
-        <div class="toast sucesso"><i class="fa fa-check-circle"></i> <?= htmlspecialchars($_SESSION['msg_sucesso']) ?></div>
-        <?php unset($_SESSION['msg_sucesso']); ?>
+    <?php if (isset(\$_SESSION['msg_sucesso'])): ?>
+        <div class="toast sucesso"><i class="fa fa-check-circle"></i> <?= htmlspecialchars(\$_SESSION['msg_sucesso']) ?></div>
+        <?php unset(\$_SESSION['msg_sucesso']); ?>
     <?php endif; ?>
-    <?php if (isset($_SESSION['msg_erro'])): ?>
-        <div class="toast erro"><i class="fa fa-exclamation-circle"></i> <?= htmlspecialchars($_SESSION['msg_erro']) ?></div>
-        <?php unset($_SESSION['msg_erro']); ?>
+    <?php if (isset(\$_SESSION['msg_erro'])): ?>
+        <div class="toast erro"><i class="fa fa-exclamation-circle"></i> <?= htmlspecialchars(\$_SESSION['msg_erro']) ?></div>
+        <?php unset(\$_SESSION['msg_erro']); ?>
     <?php endif; ?>
 </div>
 
@@ -165,7 +183,7 @@ table th{ background:#e2e8f0; }
         <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
         <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
         <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
-        <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
+        <?php if (\$_SESSION['nivel_acesso'] === 'admin'): ?>
         <li><a href="usuarios.php"><i class="fa fa-users"></i> Usuários</a></li>
         <li><a href="relatorios.php"><i class="fa fa-file"></i> Relatórios</a></li>
         <li><a href="configuracoes.php"><i class="fa fa-gear"></i> Configurações</a></li>
@@ -176,74 +194,81 @@ table th{ background:#e2e8f0; }
 <div class="main">
     
     <div class="topbar">
-        <h1>Produtos</h1>
-        <form method="GET" action="produtos.php">
-            <input type="text" name="pesquisa" placeholder="Pesquisar produto..." value="<?= htmlspecialchars($termo_pesquisa) ?>">
+        <h1>Fornecedores</h1>
+        <form method="GET" action="fornecedores.php">
+            <input type="text" name="pesquisa" placeholder="Pesquisar fornecedor..." value="<?= htmlspecialchars(\$termo_pesquisa) ?>">
             <button type="submit" class="btn-primary" style="margin-top:0;">Buscar</button>
         </form>
     </div>
 
+    <!-- CARDS -->
+    <div class="cards">
+        <div class="card">
+            <h3>Total de Fornecedores</h3>
+            <p><?= \$totalFornecedores ?></p>
+        </div>
+        <div class="card">
+            <h3>Fornecedores Ativos</h3>
+            <p><?= \$ativos ?></p>
+        </div>
+        <div class="card">
+            <h3>Fornecedores Inativos</h3>
+            <p><?= \$inativos ?></p>
+        </div>
+    </div>
+
     <!-- FORMULÁRIO -->
     <div class="form-container">
-        <h2>Cadastrar Produto</h2>
-        <form method="POST" action="produtos.php">
+        <h2>Cadastrar Fornecedor</h2>
+        <form method="POST" action="fornecedores.php">
             <input type="hidden" name="acao" value="adicionar">
             <div class="form-grid">
-                <input type="text" name="nome" placeholder="Nome do produto" required>
-                <input type="number" name="quantidade" placeholder="Quantidade inicial" value="0" required>
-                <input type="number" step="0.01" name="preco" placeholder="Preço" value="0.00" required>
-                <select name="categoria_id" required>
-                    <option value="">Categoria</option>
-                    <?php foreach($categorias as $cat): ?>
-                        <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['nome']) ?></option>
-                    <?php endforeach; ?>
-                </select>
+                <input type="text" name="nome" placeholder="Nome da empresa" required>
+                <input type="text" name="telefone" placeholder="Telefone">
+                <input type="email" name="email" placeholder="E-mail">
+                <input type="text" name="cidade" placeholder="Cidade">
             </div>
-            <button type="submit" class="btn-primary">Adicionar Produto</button>
+            <button type="submit" class="btn-primary">Cadastrar</button>
         </form>
     </div>
 
     <!-- TABELA -->
     <div class="table-container">
-        <h2>Lista de Produtos</h2>
+        <h2>Lista de Fornecedores</h2>
         <table>
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Produto</th>
-                    <th>Categoria</th>
-                    <th>Quantidade</th>
-                    <th>Preço</th>
+                    <th>Empresa</th>
+                    <th>Telefone</th>
+                    <th>E-mail</th>
+                    <th>Cidade</th>
                     <th>Status</th>
-                    <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
+                    <?php if (\$_SESSION['nivel_acesso'] === 'admin'): ?>
                     <th>Ações</th>
                     <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($produtos as $prod): ?>
-                    <?php
-                        $classe = 'disponivel';
-                        if ($prod['status'] == 'Baixo') $classe = 'baixo';
-                        elseif ($prod['status'] == 'Zerado') $classe = 'zerado';
-                    ?>
+                <?php foreach(\$fornecedores as \$forn): ?>
+                    <?php \$classe = (\$forn['status'] == 'Ativo') ? 'ativo' : 'inativo'; ?>
                 <tr>
-                    <td><?= $prod['id'] ?></td>
-                    <td><?= htmlspecialchars($prod['nome']) ?></td>
-                    <td><?= htmlspecialchars($prod['categoria_nome'] ?? 'N/A') ?></td>
-                    <td><?= $prod['quantidade'] ?></td>
-                    <td>R$ <?= number_format($prod['preco'], 2, ',', '.') ?></td>
-                    <td><span class="status <?= $classe ?>"><?= htmlspecialchars($prod['status']) ?></span></td>
-                    <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
+                    <td><?= \$forn['id'] ?></td>
+                    <td><?= htmlspecialchars(\$forn['nome']) ?></td>
+                    <td><?= htmlspecialchars(\$forn['telefone']) ?></td>
+                    <td><?= htmlspecialchars(\$forn['email']) ?></td>
+                    <td><?= htmlspecialchars(\$forn['cidade']) ?></td>
+                    <td><span class="status <?= \$classe ?>"><?= htmlspecialchars(\$forn['status']) ?></span></td>
+                    <?php if (\$_SESSION['nivel_acesso'] === 'admin'): ?>
                     <td class="acoes">
-                        <a href="#" onclick="editarProduto(<?= $prod['id'] ?>, '<?= addslashes(htmlspecialchars($prod['nome'])) ?>', <?= $prod['quantidade'] ?>, <?= $prod['preco'] ?>, <?= $prod['categoria_id'] ?>)" style="padding:8px 12px; background:#f59e0b; color:white; text-decoration:none; border-radius:8px; font-size:14px; margin-right:5px;"><i class='fa fa-pen'></i> Editar</a>
-                        <a href="produtos.php?excluir=<?= $prod['id'] ?>" class="btn-delete" onclick="return confirm('Tem certeza que deseja excluir?');">Excluir</a>
+                        <a href="#" onclick="editarFornecedor(<?= \$forn['id'] ?>, '<?= addslashes(htmlspecialchars(\$forn['nome'])) ?>', '<?= addslashes(htmlspecialchars(\$forn['telefone'])) ?>', '<?= addslashes(htmlspecialchars(\$forn['email'])) ?>', '<?= addslashes(htmlspecialchars(\$forn['cidade'])) ?>')" style="padding:8px 12px; background:#f59e0b; color:white; text-decoration:none; border-radius:8px; font-size:14px; margin-right:5px;"><i class='fa fa-pen'></i> Editar</a>
+                        <a href="fornecedores.php?excluir=<?= \$forn['id'] ?>" class="btn-delete" onclick="return confirm('Tem certeza que deseja excluir?');">Excluir</a>
                     </td>
                     <?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
-                <?php if(empty($produtos)): ?>
-                <tr><td colspan="7" style="text-align: center;">Nenhum produto encontrado.</td></tr>
+                <?php if(empty(\$fornecedores)): ?>
+                <tr><td colspan="7" style="text-align: center;">Nenhum fornecedor encontrado.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -252,21 +277,26 @@ table th{ background:#e2e8f0; }
 </div>
 
 <script>
-function editarProduto(id, nome, quantidade, preco, categoria_id) {
+function editarFornecedor(id, nome, telefone, email, cidade) {
     document.querySelector('input[name="acao"]').value = 'editar';
-    let idInput = document.querySelector('input[name="id_produto"]');
+    let idInput = document.querySelector('input[name="id_fornecedor"]');
     if(!idInput) {
         idInput = document.createElement('input');
         idInput.type = 'hidden';
-        idInput.name = 'id_produto';
+        idInput.name = 'id_fornecedor';
         document.querySelector('.form-container form').appendChild(idInput);
     }
     idInput.value = id;
     document.querySelector('input[name="nome"]').value = nome;
-    document.querySelector('input[name="quantidade"]').value = quantidade;
-    document.querySelector('input[name="preco"]').value = preco;
-    document.querySelector('select[name="categoria_id"]').value = categoria_id;
-    document.querySelector('.form-container h2').innerText = "Editar Produto";
+    document.querySelector('input[name="telefone"]').value = telefone;
+    document.querySelector('input[name="email"]').value = email;
+    
+    let cidadeInput = document.querySelector('input[name="cidade"]');
+    if(cidadeInput) {
+        cidadeInput.value = cidade;
+    }
+    
+    document.querySelector('.form-container h2').innerText = "Editar Fornecedor";
     document.querySelector('.form-container button').innerText = "Salvar Alterações";
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -284,3 +314,8 @@ function toggleMenu(){
 
 </body>
 </html>
+PHP;
+
+file_put_contents('fornecedores.php', $content);
+echo "Consertado";
+?>

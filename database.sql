@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
+    nivel_acesso ENUM('admin', 'comum') NOT NULL DEFAULT 'comum',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -25,7 +26,9 @@ CREATE TABLE IF NOT EXISTS produtos (
     unidade_medida VARCHAR(20) DEFAULT 'Unidade (un)',
     status ENUM('Disponível', 'Baixo', 'Zerado') DEFAULT 'Disponível',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE SET NULL
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE SET NULL,
+    INDEX idx_nome (nome)
 );
 
 CREATE TABLE IF NOT EXISTS fornecedores (
@@ -50,7 +53,8 @@ CREATE TABLE IF NOT EXISTS movimentacoes (
 );
 
 -- Inserir usuário administrador padrão (senha: admin123)
-INSERT IGNORE INTO usuarios (nome, email, senha) VALUES ('Administrador', 'adm@almox.com', '$2y$10$eE/.9R7c.k8A9D9mF9xL6e8sB7D.Z5K.xO1hG8/V4eW.B8.H4U1K');
+INSERT IGNORE INTO usuarios (nome, email, senha, nivel_acesso) VALUES ('Administrador', 'adm@almox.com', '$2y$10$tgLeiorlNM8qGWAlk6rQ4Oyy9VYCQsfzZ65EX8N7E2faOHoDODxRC', 'admin');
 
 -- Categorias padrão
 INSERT IGNORE INTO categorias (nome) VALUES ('Limpeza'), ('Escritório'), ('Ferramentas'), ('Equipamentos'), ('Consumíveis'), ('EPIs');
+

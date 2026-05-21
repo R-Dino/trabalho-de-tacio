@@ -6,6 +6,11 @@ if (!isset($_SESSION['usuario_id'])) {
     header("Location: index.php");
     exit;
 }
+
+// Proteção para Admin
+if ($_SESSION['nivel_acesso'] !== 'admin') {
+    die("Acesso negado. Apenas administradores podem acessar as configurações.");
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -69,6 +74,24 @@ if (!isset($_SESSION['usuario_id'])) {
     </style>
 </head>
 <body>
+<style>
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+.toast { background: #333; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards; }
+.toast.sucesso { background: #10b981; }
+.toast.erro { background: #ef4444; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; display: none; } }
+</style>
+<div class="toast-container">
+    <?php if (isset($_SESSION['msg_sucesso'])): ?>
+        <div class="toast sucesso"><i class="fa fa-check-circle"></i> <?= htmlspecialchars($_SESSION['msg_sucesso']) ?></div>
+        <?php unset($_SESSION['msg_sucesso']); ?>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['msg_erro'])): ?>
+        <div class="toast erro"><i class="fa fa-exclamation-circle"></i> <?= htmlspecialchars($_SESSION['msg_erro']) ?></div>
+        <?php unset($_SESSION['msg_erro']); ?>
+    <?php endif; ?>
+</div>
 
     <button class="menu-toggle" onclick="toggleMenu()">
         <i class="fa fa-bars"></i>
@@ -82,6 +105,7 @@ if (!isset($_SESSION['usuario_id'])) {
             <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
             <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
             <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
+            <li><a href="usuarios.php"><i class="fa fa-users"></i> Usuários</a></li>
             <li><a href="relatorios.php"><i class="fa fa-file"></i> Relatórios</a></li>
             <li><a href="configuracoes.php"><i class="fa fa-gear"></i> Configurações</a></li>
         </ul>

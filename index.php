@@ -17,13 +17,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $senha = $_POST['senha'];
 
         if (!empty($email) && !empty($senha)) {
-            $stmt = $pdo->prepare("SELECT id, nome, senha FROM usuarios WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT id, nome, senha, nivel_acesso FROM usuarios WHERE email = ?");
             $stmt->execute([$email]);
             $usuario = $stmt->fetch();
 
             if ($usuario && password_verify($senha, $usuario['senha'])) {
                 $_SESSION['usuario_id'] = $usuario['id'];
                 $_SESSION['usuario_nome'] = $usuario['nome'];
+                $_SESSION['nivel_acesso'] = $usuario['nivel_acesso'];
                 header("Location: telainicial.php");
                 exit;
             } else {
@@ -184,9 +185,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .alert-error { background-color: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
         .alert-success { background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
 
-    </style>
+    
+        /* MODO ESCURO GLOBAL */
+        body.dark-mode { background: #0f172a; color: #f1f5f9; }
+        body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .form-container, body.dark-mode .report-card, body.dark-mode .chart-box, body.dark-mode .activity-box { background: #1e293b; box-shadow: none; color: #f1f5f9; }
+        body.dark-mode .topbar h1, body.dark-mode .form-container h2, body.dark-mode .table-container h2 { color: #f1f5f9; }
+        body.dark-mode .card h3 { color: #94a3b8; }
+        body.dark-mode input, body.dark-mode select { background: #334155 !important; border: 1px solid #475569 !important; color: white !important; }
+        body.dark-mode table th { background: #0f172a !important; color: #f1f5f9; border-bottom: 1px solid #334155;}
+        body.dark-mode table td, body.dark-mode tr { border-bottom: 1px solid #334155 !important; color: #cbd5e1; }
+        body.dark-mode .activity-item { border-bottom: 1px solid #334155; }
+        body.dark-mode .activity-item p { color: #94a3b8; }
+        
+        /* Ajustes extras para Tela de Login */
+        body.dark-mode .auth-card { background: #1e293b; box-shadow: none; }
+        body.dark-mode header { background: #0f172a; border-bottom: 1px solid #334155; }
+        body.dark-mode .tabs { background: #1e293b; border-bottom: 1px solid #334155; }
+        body.dark-mode .tab-btn { color: #94a3b8; }
+        body.dark-mode .tab-btn.active { background: #1e293b; color: #38bdf8; border-bottom: 3px solid #38bdf8; }
+        body.dark-mode .field label { color: #cbd5e1; }
+        body.dark-mode .form-utils { color: #94a3b8; }
+        body.dark-mode .alert-error { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+        body.dark-mode .alert-success { background: #052e16; border-color: #14532d; color: #86efac; }
+</style>
 </head>
 <body>
+<style>
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+.toast { background: #333; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards; }
+.toast.sucesso { background: #10b981; }
+.toast.erro { background: #ef4444; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; display: none; } }
+</style>
+<div class="toast-container">
+    <?php if (isset($_SESSION['msg_sucesso'])): ?>
+        <div class="toast sucesso"><i class="fa fa-check-circle"></i> <?= htmlspecialchars($_SESSION['msg_sucesso']) ?></div>
+        <?php unset($_SESSION['msg_sucesso']); ?>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['msg_erro'])): ?>
+        <div class="toast erro"><i class="fa fa-exclamation-circle"></i> <?= htmlspecialchars($_SESSION['msg_erro']) ?></div>
+        <?php unset($_SESSION['msg_erro']); ?>
+    <?php endif; ?>
+</div>
 
 <main class="auth-card">
     <header>
@@ -258,6 +299,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if (isset($_POST['acao']) && $_POST['acao'] === 'register' && !empty($erro)): ?>
         switchTab('register');
     <?php endif; ?>
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem("darkMode") === "true") {
+                document.body.classList.add("dark-mode");
+            }
+        });
 </script>
 </body>
 </html>
