@@ -11,4 +11,15 @@ try {
 } catch (PDOException $e) {
     die("Erro de conexão com o banco de dados: " . $e->getMessage());
 }
+
+// Lógica Global de Logoff por Inatividade (30 minutos)
+if (isset($_SESSION['usuario_id'])) {
+    if (isset($_SESSION['ultima_atividade']) && (time() - $_SESSION['ultima_atividade'] > 1800)) {
+        session_unset();
+        session_destroy();
+        header("Location: index.php?timeout=1");
+        exit;
+    }
+    $_SESSION['ultima_atividade'] = time();
+}
 ?>

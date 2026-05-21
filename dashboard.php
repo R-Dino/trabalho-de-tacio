@@ -104,9 +104,49 @@ table th{ background:#e2e8f0; }
 @media(max-width: 768px) {
     .dashboard-grid{ grid-template-columns: 1fr; }
 }
+
+        /* MODO ESCURO GLOBAL */
+        body.dark-mode { background: #0f172a; color: #f1f5f9; }
+        body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .form-container, body.dark-mode .report-card, body.dark-mode .chart-box, body.dark-mode .activity-box { background: #1e293b; box-shadow: none; color: #f1f5f9; }
+        body.dark-mode .topbar h1, body.dark-mode .form-container h2, body.dark-mode .table-container h2 { color: #f1f5f9; }
+        body.dark-mode .card h3 { color: #94a3b8; }
+        body.dark-mode input, body.dark-mode select { background: #334155 !important; border: 1px solid #475569 !important; color: white !important; }
+        body.dark-mode table th { background: #0f172a !important; color: #f1f5f9; border-bottom: 1px solid #334155;}
+        body.dark-mode table td, body.dark-mode tr { border-bottom: 1px solid #334155 !important; color: #cbd5e1; }
+        body.dark-mode .activity-item { border-bottom: 1px solid #334155; }
+        body.dark-mode .activity-item p { color: #94a3b8; }
+        
+        /* Ajustes extras para Tela de Login */
+        body.dark-mode .auth-card { background: #1e293b; box-shadow: none; }
+        body.dark-mode header { background: #0f172a; border-bottom: 1px solid #334155; }
+        body.dark-mode .tabs { background: #1e293b; border-bottom: 1px solid #334155; }
+        body.dark-mode .tab-btn { color: #94a3b8; }
+        body.dark-mode .tab-btn.active { background: #1e293b; color: #38bdf8; border-bottom: 3px solid #38bdf8; }
+        body.dark-mode .field label { color: #cbd5e1; }
+        body.dark-mode .form-utils { color: #94a3b8; }
+        body.dark-mode .alert-error { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
+        body.dark-mode .alert-success { background: #052e16; border-color: #14532d; color: #86efac; }
 </style>
 </head>
 <body>
+<style>
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+.toast { background: #333; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards; }
+.toast.sucesso { background: #10b981; }
+.toast.erro { background: #ef4444; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; display: none; } }
+</style>
+<div class="toast-container">
+    <?php if (isset($_SESSION['msg_sucesso'])): ?>
+        <div class="toast sucesso"><i class="fa fa-check-circle"></i> <?= htmlspecialchars($_SESSION['msg_sucesso']) ?></div>
+        <?php unset($_SESSION['msg_sucesso']); ?>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['msg_erro'])): ?>
+        <div class="toast erro"><i class="fa fa-exclamation-circle"></i> <?= htmlspecialchars($_SESSION['msg_erro']) ?></div>
+        <?php unset($_SESSION['msg_erro']); ?>
+    <?php endif; ?>
+</div>
 
 <button class="menu-toggle" onclick="toggleMenu()"><i class="fa fa-bars"></i></button>
 
@@ -118,8 +158,11 @@ table th{ background:#e2e8f0; }
         <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
         <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
         <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
+        <?php if ($_SESSION['nivel_acesso'] === 'admin'): ?>
+        <li><a href="usuarios.php"><i class="fa fa-users"></i> Usuários</a></li>
         <li><a href="relatorios.php"><i class="fa fa-file"></i> Relatórios</a></li>
         <li><a href="configuracoes.php"><i class="fa fa-gear"></i> Configurações</a></li>
+        <?php endif; ?>
     </ul>
 </div>
 
@@ -130,7 +173,7 @@ table th{ background:#e2e8f0; }
             <img src="https://i.pravatar.cc/100" alt="Usuário">
             <div>
                 <strong><?= htmlspecialchars($_SESSION['usuario_nome']) ?></strong>
-                <p>Almoxarifado Central</p>
+                <p>Almoxarifado Central <?= $_SESSION['nivel_acesso'] === 'admin' ? '<span style="color:var(--primary-color);font-weight:bold;">[Admin]</span>' : '' ?></p>
             </div>
         </div>
     </div>
@@ -203,6 +246,12 @@ function toggleMenu(){
     let sidebar = document.getElementById("sidebar");
     sidebar.classList.toggle("active");
 }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem("darkMode") === "true") {
+                document.body.classList.add("dark-mode");
+            }
+        });
 </script>
 </body>
 </html>
