@@ -2,7 +2,7 @@
 $host = 'localhost';
 $dbname = 'almoxarifado';
 $user = 'root';
-$pass = ''; // Por padrão, no XAMPP, a senha do root é vazia.
+$pass = ''; 
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $user, $pass);

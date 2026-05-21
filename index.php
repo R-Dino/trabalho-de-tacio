@@ -4,7 +4,7 @@ require 'db.php';
 
 // Se já estiver logado, redireciona para a tela inicial
 if (isset($_SESSION['usuario_id'])) {
-    header("Location: telainicial.php");
+    header("Location: dashboard.php");
     exit;
 }
 
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($usuario && password_verify($senha, $usuario['senha'])) {
                 $_SESSION['usuario_id'] = $usuario['id'];
                 $_SESSION['usuario_nome'] = $usuario['nome'];
-                header("Location: telainicial.php");
+                header("Location: dashboard.php");
                 exit;
             } else {
                 $erro = "E-mail ou senha incorretos.";
