@@ -38,11 +38,17 @@ if (isset($_GET['exportar'])) {
     }
 }
 
-// Estatísticas
-$totalProdutos = $pdo->query("SELECT COUNT(*) FROM produtos")->fetchColumn() ?: 0;
+$stats = $pdo->query("
+    SELECT 
+        COUNT(*) as total_produtos,
+        SUM(CASE WHEN status IN ('Baixo', 'Zerado') THEN 1 ELSE 0 END) as baixo_estoque
+    FROM produtos
+")->fetch();
+$totalProdutos = $stats['total_produtos'] ?? 0;
+$baixoEstoque = $stats['baixo_estoque'] ?? 0;
+
 $totalMovimentacoes = $pdo->query("SELECT COUNT(*) FROM movimentacoes")->fetchColumn() ?: 0;
 $totalFornecedores = $pdo->query("SELECT COUNT(*) FROM fornecedores")->fetchColumn() ?: 0;
-$baixoEstoque = $pdo->query("SELECT COUNT(*) FROM produtos WHERE status = 'Baixo' OR status = 'Zerado'")->fetchColumn() ?: 0;
 
 // Obter logs do sistema
 $logsSistema = [];
@@ -129,6 +135,7 @@ table th{ background:#e2e8f0; }
         body.dark-mode .alert-error { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
         body.dark-mode .alert-success { background: #052e16; border-color: #14532d; color: #86efac; }
 </style>
+    <link rel="stylesheet" href="premium.css">
 </head>
 <body>
 <style>

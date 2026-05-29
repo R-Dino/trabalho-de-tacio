@@ -72,6 +72,7 @@ if (!isset($_SESSION['nivel_acesso']) || $_SESSION['nivel_acesso'] !== 'admin') 
         .btn-save-fixed { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); cursor: pointer; display: flex; align-items: center; gap: 10px; z-index: 1001; }
         .badge-pro { background: #fbbf24; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
     </style>
+    <link rel="stylesheet" href="premium.css">
 </head>
 <body>
 <style>

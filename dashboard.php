@@ -7,9 +7,17 @@ if (!isset($_SESSION['usuario_id'])) {
     exit;
 }
 
-$totalProdutos = $pdo->query("SELECT COUNT(*) FROM produtos")->fetchColumn() ?: 0;
-$totalEstoque = $pdo->query("SELECT SUM(quantidade) FROM produtos")->fetchColumn() ?: 0;
-$baixoEstoque = $pdo->query("SELECT COUNT(*) FROM produtos WHERE status = 'Baixo' OR status = 'Zerado'")->fetchColumn() ?: 0;
+$stats = $pdo->query("
+    SELECT 
+        COUNT(*) as total_produtos,
+        COALESCE(SUM(quantidade), 0) as total_estoque,
+        SUM(CASE WHEN status IN ('Baixo', 'Zerado') THEN 1 ELSE 0 END) as baixo_estoque
+    FROM produtos
+")->fetch();
+
+$totalProdutos = $stats['total_produtos'] ?? 0;
+$totalEstoque = $stats['total_estoque'] ?? 0;
+$baixoEstoque = $stats['baixo_estoque'] ?? 0;
 $totalFornecedores = $pdo->query("SELECT COUNT(*) FROM fornecedores")->fetchColumn() ?: 0;
 
 $movimentacoes = $pdo->query("
@@ -129,6 +137,7 @@ table th{ background:#e2e8f0; }
         body.dark-mode .alert-error { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
         body.dark-mode .alert-success { background: #052e16; border-color: #14532d; color: #86efac; }
 </style>
+    <link rel="stylesheet" href="premium.css">
 </head>
 <body>
 <style>

@@ -150,6 +150,7 @@ table th{ background:#e2e8f0; }
         body.dark-mode .alert-error { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
         body.dark-mode .alert-success { background: #052e16; border-color: #14532d; color: #86efac; }
 </style>
+    <link rel="stylesheet" href="premium.css">
 </head>
 <body>
 <style>
