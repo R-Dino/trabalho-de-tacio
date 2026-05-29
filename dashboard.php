@@ -26,6 +26,20 @@ $ultimosProdutos = $pdo->query("
     ORDER BY p.id DESC LIMIT 4
 ")->fetchAll();
 
+// Dados para o Gráfico (Estoque por Categoria)
+$categoriasEstoque = $pdo->query("
+    SELECT c.nome, SUM(p.quantidade) as total 
+    FROM produtos p 
+    JOIN categorias c ON p.categoria_id = c.id 
+    GROUP BY c.id
+")->fetchAll();
+
+$catNomes = [];
+$catTotais = [];
+foreach($categoriasEstoque as $cat) {
+    $catNomes[] = $cat['nome'];
+    $catTotais[] = $cat['total'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -175,12 +189,9 @@ table th{ background:#e2e8f0; }
 
     <div class="dashboard-grid">
         <div class="chart-box">
-            <h2>Movimentação de Estoque (Demo Visual)</h2>
-            <div class="chart">
-                <div class="bar"><span>Produtos de Limpeza</span><div class="progress"><div class="azul"></div></div></div>
-                <div class="bar"><span>Ferramentas</span><div class="progress"><div class="verde"></div></div></div>
-                <div class="bar"><span>Equipamentos</span><div class="progress"><div class="vermelho"></div></div></div>
-                <div class="bar"><span>Escritório</span><div class="progress"><div class="amarelo"></div></div></div>
+            <h2>Estoque por Categoria (Gráfico)</h2>
+            <div style="width: 100%; height: 250px; display: flex; justify-content: center; margin-top: 20px;">
+                <canvas id="graficoEstoque"></canvas>
             </div>
         </div>
 
@@ -229,17 +240,50 @@ table th{ background:#e2e8f0; }
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function toggleMenu(){
     let sidebar = document.getElementById("sidebar");
     sidebar.classList.toggle("active");
 }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem("darkMode") === "true") {
-                document.body.classList.add("dark-mode");
+window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+    }
+
+    // Inicializar Gráfico
+    const ctx = document.getElementById('graficoEstoque');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: <?= json_encode($catNomes) ?>,
+                datasets: [{
+                    label: 'Quantidade em Estoque',
+                    data: <?= json_encode($catTotais) ?>,
+                    backgroundColor: [
+                        '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
+                    ],
+                    borderWidth: 2,
+                    borderColor: localStorage.getItem("darkMode") === "true" ? '#1e293b' : '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: localStorage.getItem("darkMode") === "true" ? '#f1f5f9' : '#0f172a'
+                        }
+                    }
+                }
             }
         });
+    }
+});
 </script>
 </body>
 </html>

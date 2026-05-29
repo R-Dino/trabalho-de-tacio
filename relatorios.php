@@ -211,12 +211,17 @@ table th{ background:#e2e8f0; }
             <p>Veja os fornecedores cadastrados no sistema.</p>
             <button onclick="gerarRelatorio('Fornecedores')">Simular Relatório</button>
         </div>
+        <div class="report-card">
+            <h2>Logs em PDF</h2>
+            <p>Gere um arquivo PDF com os últimos logs de atividades.</p>
+            <button onclick="exportarPDF()" style="background:#ef4444;"><i class="fa fa-file-pdf"></i> Gerar PDF</button>
+        </div>
     </div>
 
     <!-- TABELA -->
     <div class="table-container">
         <h2>Logs do Sistema (Atividades Recentes)</h2>
-        <table>
+        <table id="tabelaLogs">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -247,6 +252,8 @@ table th{ background:#e2e8f0; }
 
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script>
 function toggleMenu(){
     let sidebar = document.getElementById("sidebar");
@@ -257,6 +264,27 @@ let contador = 1;
 
 function gerarRelatorio(tipo){
     alert("Simulação de geração de relatório de " + tipo + " disparada.");
+}
+
+function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.text("Relatório de Logs do Sistema", 14, 22);
+    
+    doc.setFontSize(11);
+    doc.text("Gerado em: " + new Date().toLocaleString("pt-BR"), 14, 30);
+    
+    doc.autoTable({
+        html: '#tabelaLogs',
+        startY: 35,
+        theme: 'striped',
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [37, 99, 235] }
+    });
+    
+    doc.save('logs_sistema.pdf');
 }
 
         window.addEventListener('DOMContentLoaded', () => {
