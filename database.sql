@@ -2,22 +2,15 @@
 session_start();
 require 'db.php';
 
-<<<<<<< HEAD
-// 1. GARANTIA DE SEGURANÇA: Se não houver sessão, chuta de volta para o login
-if (!isset($_SESSION['usuario_id'])) {
-    header("Location: index.php");
-    exit;
-}
-=======
 CREATE TABLE IF NOT EXISTS usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
     nivel_acesso ENUM('admin', 'comum') NOT NULL DEFAULT 'comum',
+    status ENUM('ativo', 'banido') NOT NULL DEFAULT 'ativo',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
->>>>>>> 81a7f9b176d2662fcd675e03b2180fbfeff8468b
 
 try {
     // 2. METRICAS: Busca dos dados para os cards informativos

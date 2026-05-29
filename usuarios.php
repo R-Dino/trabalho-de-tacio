@@ -18,6 +18,24 @@ if (isset($_GET['excluir_usuario'])) {
     if ($id_excluir !== $_SESSION['usuario_id']) { 
         $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id = ?");
         $stmt->execute([$id_excluir]);
+        $_SESSION['msg_sucesso'] = "Usuário excluído com sucesso!";
+    } else {
+        $_SESSION['msg_erro'] = "Ação negada.";
+    }
+    header("Location: usuarios.php");
+    exit;
+}
+
+// Lidar com banimento/desbanimento de usuário
+if (isset($_GET['banir_usuario'])) {
+    $id_banir = (int)$_GET['banir_usuario'];
+    $status_atual = $_GET['status'] ?? 'ativo';
+    $novo_status = $status_atual === 'banido' ? 'ativo' : 'banido';
+    
+    if ($id_banir !== $_SESSION['usuario_id']) { 
+        $stmt = $pdo->prepare("UPDATE usuarios SET status = ? WHERE id = ?");
+        $stmt->execute([$novo_status, $id_banir]);
+        $_SESSION['msg_sucesso'] = "Status de banimento atualizado!";
     }
     header("Location: usuarios.php");
     exit;
@@ -31,13 +49,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     if ($id_usuario !== $_SESSION['usuario_id'] && in_array($novo_nivel, ['admin', 'comum'])) {
         $stmt = $pdo->prepare("UPDATE usuarios SET nivel_acesso = ? WHERE id = ?");
         $stmt->execute([$novo_nivel, $id_usuario]);
+        $_SESSION['msg_sucesso'] = "Nível de acesso alterado com sucesso!";
     }
     header("Location: usuarios.php");
     exit;
 }
 
-// Obter usuários
-$usuarios = $pdo->query("SELECT id, nome, email, nivel_acesso, criado_em FROM usuarios ORDER BY id ASC")->fetchAll();
+// Obter usuários (com filtro de pesquisa)
+$busca = $_GET['busca'] ?? '';
+if (!empty($busca)) {
+    $stmt = $pdo->prepare("SELECT id, nome, email, nivel_acesso, status, criado_em FROM usuarios WHERE id = ? OR nome LIKE ? ORDER BY id ASC");
+    $stmt->execute([$busca, "%$busca%"]);
+    $usuarios = $stmt->fetchAll();
+} else {
+    $usuarios = $pdo->query("SELECT id, nome, email, nivel_acesso, status, criado_em FROM usuarios ORDER BY id ASC")->fetchAll();
+}
 
 // Estatísticas
 $totalUsuarios = count($usuarios);
@@ -164,13 +190,27 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
 
         <div class="table-container">
             <h2>Lista de Usuários</h2>
+            <form method="GET" action="usuarios.php" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" name="busca" placeholder="Pesquisar por ID ou Nome..." value="<?= htmlspecialchars($busca) ?>" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%; max-width: 350px; outline: none;">
+                <button type="submit" style="padding: 10px 15px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;"><i class="fa fa-search"></i> Pesquisar</button>
+                <?php if(!empty($busca)): ?>
+                    <a href="usuarios.php" style="padding: 10px 15px; background: #94a3b8; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; display: flex; align-items: center;">Limpar</a>
+                <?php endif; ?>
+            </form>
+            
+            <div style="margin-bottom: 15px; background: #e0f2fe; color: #0284c7; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 500;">
+                <i class="fa fa-info-circle"></i> <strong>Categorias de Liberdade:</strong> <br>
+                - <strong>Usuário Comum:</strong> Pode visualizar produtos, estoque e fornecedores. <br>
+                - <strong>Administrador:</strong> Acesso total. Pode gerenciar produtos, aprovar estoque, banir e promover usuários.
+            </div>
+
             <table>
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Nome</th>
+                        <th>Nome / Status</th>
                         <th>Email</th>
-                        <th>Nível de Acesso</th>
+                        <th>Nível de Acesso (Gerenciamento)</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -178,24 +218,36 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
                     <?php foreach($usuarios as $usr): ?>
                     <tr>
                         <td><?= $usr['id'] ?></td>
-                        <td><strong><?= htmlspecialchars($usr['nome']) ?></strong></td>
+                        <td>
+                            <strong><?= htmlspecialchars($usr['nome']) ?></strong>
+                            <?php if($usr['status'] === 'banido'): ?>
+                                <span style="margin-left: 8px; padding: 3px 8px; background: #ef4444; color: white; font-size: 11px; border-radius: 12px; font-weight: bold;">Banido</span>
+                            <?php else: ?>
+                                <span style="margin-left: 8px; padding: 3px 8px; background: #10b981; color: white; font-size: 11px; border-radius: 12px; font-weight: bold;">Ativo</span>
+                            <?php endif; ?>
+                        </td>
                         <td style="color:#64748b;"><?= htmlspecialchars($usr['email']) ?></td>
                         <td>
-                            <form method="POST" action="usuarios.php" style="display:flex; gap:8px; align-items:center;">
+                            <form method="POST" action="usuarios.php" style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
                                 <input type="hidden" name="acao" value="mudar_nivel">
                                 <input type="hidden" name="usuario_id" value="<?= $usr['id'] ?>">
                                 <select name="nivel_acesso" style="padding:6px; border-radius:6px; border:1px solid #cbd5e1; outline:none;" <?= $usr['id'] === $_SESSION['usuario_id'] ? 'disabled' : '' ?>>
-                                    <option value="comum" <?= $usr['nivel_acesso'] == 'comum' ? 'selected' : '' ?>>Usuário Comum</option>
-                                    <option value="admin" <?= $usr['nivel_acesso'] == 'admin' ? 'selected' : '' ?>>Administrador</option>
+                                    <option value="comum" <?= $usr['nivel_acesso'] == 'comum' ? 'selected' : '' ?>>Usuário Comum (Leitura)</option>
+                                    <option value="admin" <?= $usr['nivel_acesso'] == 'admin' ? 'selected' : '' ?>>Administrador (Total)</option>
                                 </select>
                                 <?php if ($usr['id'] !== $_SESSION['usuario_id']): ?>
                                     <button type="submit" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">Atualizar Cargo</button>
                                 <?php endif; ?>
                             </form>
                         </td>
-                        <td>
+                        <td style="display: flex; gap: 8px;">
                             <?php if ($usr['id'] !== $_SESSION['usuario_id']): ?>
-                                <a href="usuarios.php?excluir_usuario=<?= $usr['id'] ?>" onclick="return confirm('ATENÇÃO: Deseja realmente excluir o usuário <?= htmlspecialchars($usr['nome']) ?> de forma permanente?');" style="color:#ef4444; text-decoration:none; font-weight:bold; font-size: 14px; display:inline-block; padding: 6px 12px; background: #fef2f2; border-radius: 6px;"><i class="fa fa-user-xmark"></i> Remover</a>
+                                <?php if($usr['status'] === 'banido'): ?>
+                                    <a href="usuarios.php?banir_usuario=<?= $usr['id'] ?>&status=banido" style="color:#10b981; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #d1fae5; border-radius: 6px;"><i class="fa fa-unlock"></i> Desbanir</a>
+                                <?php else: ?>
+                                    <a href="usuarios.php?banir_usuario=<?= $usr['id'] ?>&status=ativo" onclick="return confirm('Deseja realmente banir o usuário <?= htmlspecialchars($usr['nome']) ?>? Ele perderá o acesso ao sistema.');" style="color:#f59e0b; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #fef3c7; border-radius: 6px;"><i class="fa fa-ban"></i> Banir</a>
+                                <?php endif; ?>
+                                <a href="usuarios.php?excluir_usuario=<?= $usr['id'] ?>" onclick="return confirm('ATENÇÃO: Deseja realmente excluir o usuário <?= htmlspecialchars($usr['nome']) ?> de forma permanente?');" style="color:#ef4444; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #fef2f2; border-radius: 6px;"><i class="fa fa-user-xmark"></i> Remover</a>
                             <?php else: ?>
                                 <span style="color:#94a3b8; font-size:13px; font-weight: bold;"><i class="fa fa-user-check"></i> Você (Logado)</span>
                             <?php endif; ?>
