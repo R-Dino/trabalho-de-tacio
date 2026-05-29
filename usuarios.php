@@ -73,6 +73,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     exit;
 }
 
+// Lidar com a redefinição de senha
+if (isset($_GET['redefinir_senha'])) {
+    $id_redefinir = (int)$_GET['redefinir_senha'];
+    if ($id_redefinir !== $_SESSION['usuario_id']) {
+        $usr_nome = $pdo->query("SELECT nome FROM usuarios WHERE id = $id_redefinir")->fetchColumn();
+        $senha_padrao = password_hash('123456', PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("UPDATE usuarios SET senha = ? WHERE id = ?");
+        $stmt->execute([$senha_padrao, $id_redefinir]);
+        
+        $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, ?, ?)")
+            ->execute([$_SESSION['usuario_id'], 'Redefinir Senha', "Redefiniu a senha do ID $id_redefinir (" . ($usr_nome ?: 'Desconhecido') . ") para '123456'"]);
+
+        $_SESSION['msg_sucesso'] = "Senha redefinida para '123456' com sucesso!";
+    }
+    header("Location: usuarios.php");
+    exit;
+}
+
 // Obter usuários (com filtro de pesquisa e status)
 $busca = $_GET['busca'] ?? '';
 $filtro_status = $_GET['status_filtro'] ?? '';
@@ -284,6 +302,7 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
                                 <?php else: ?>
                                     <a href="usuarios.php?banir_usuario=<?= $usr['id'] ?>&status=ativo" onclick="return confirm('Deseja realmente banir o usuário <?= htmlspecialchars($usr['nome']) ?>? Ele perderá o acesso ao sistema.');" style="color:#f59e0b; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #fef3c7; border-radius: 6px;"><i class="fa fa-ban"></i> Banir</a>
                                 <?php endif; ?>
+                                <a href="usuarios.php?redefinir_senha=<?= $usr['id'] ?>" onclick="return confirm('Redefinir a senha de <?= htmlspecialchars($usr['nome']) ?> para 123456?');" style="color:#3b82f6; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #dbeafe; border-radius: 6px;"><i class="fa fa-key"></i> Senha</a>
                                 <a href="usuarios.php?excluir_usuario=<?= $usr['id'] ?>" onclick="return confirm('ATENÇÃO: Deseja realmente excluir o usuário <?= htmlspecialchars($usr['nome']) ?> de forma permanente?');" style="color:#ef4444; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #fef2f2; border-radius: 6px;"><i class="fa fa-user-xmark"></i> Remover</a>
                             <?php else: ?>
                                 <span style="color:#94a3b8; font-size:13px; font-weight: bold;"><i class="fa fa-user-check"></i> Você (Logado)</span>
