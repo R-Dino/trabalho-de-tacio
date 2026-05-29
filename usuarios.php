@@ -12,6 +12,66 @@ if (!isset($_SESSION['nivel_acesso']) || $_SESSION['nivel_acesso'] !== 'admin') 
     die("Acesso negado. Apenas administradores podem gerenciar usuários.");
 }
 
+// 1. Adicionar Novo Usuário
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'adicionar_usuario') {
+    $nome = $_POST['nome'];
+    $email = $_POST['email'];
+    $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
+    $nivel_acesso = $_POST['nivel_acesso'] ?? 'comum';
+    $idade = !empty($_POST['idade']) ? (int)$_POST['idade'] : null;
+    $genero = $_POST['genero'] ?? null;
+    $sexo = $_POST['sexo'] ?? null;
+    $cidade = $_POST['cidade'] ?? null;
+
+    $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+    $stmt->execute([$email]);
+    if ($stmt->fetch()) {
+        $_SESSION['msg_erro'] = "O Email já está cadastrado no sistema.";
+    } else {
+        $stmt = $pdo->prepare("INSERT INTO usuarios (nome, email, senha, nivel_acesso, idade, genero, sexo, cidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$nome, $email, $senha, $nivel_acesso, $idade, $genero, $sexo, $cidade]);
+        $_SESSION['msg_sucesso'] = "Usuário cadastrado com sucesso!";
+    }
+    header("Location: usuarios.php");
+    exit;
+}
+
+// 2. Editar Usuário (inclui alterar ID)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'editar_usuario') {
+    $id_atual = (int)$_POST['id_atual'];
+    $novo_id = !empty($_POST['novo_id']) ? (int)$_POST['novo_id'] : $id_atual;
+    $nome = $_POST['nome'];
+    $email = $_POST['email'];
+    $idade = !empty($_POST['idade']) ? (int)$_POST['idade'] : null;
+    $genero = $_POST['genero'] ?? null;
+    $sexo = $_POST['sexo'] ?? null;
+    $cidade = $_POST['cidade'] ?? null;
+
+    try {
+        if ($novo_id !== $id_atual) {
+            $check = $pdo->prepare("SELECT id FROM usuarios WHERE id = ?");
+            $check->execute([$novo_id]);
+            if ($check->fetch()) {
+                throw new Exception("O ID $novo_id já está em uso por outro usuário.");
+            }
+        }
+        
+        $stmt = $pdo->prepare("UPDATE usuarios SET id = ?, nome = ?, email = ?, idade = ?, genero = ?, sexo = ?, cidade = ? WHERE id = ?");
+        $stmt->execute([$novo_id, $nome, $email, $idade, $genero, $sexo, $cidade, $id_atual]);
+        $_SESSION['msg_sucesso'] = "Dados do usuário atualizados com sucesso!";
+        
+        // Atualizar sessão se editou a si mesmo
+        if ($id_atual === $_SESSION['usuario_id']) {
+            $_SESSION['usuario_id'] = $novo_id;
+            $_SESSION['usuario_nome'] = $nome;
+        }
+    } catch(Exception $e) {
+        $_SESSION['msg_erro'] = "Erro ao editar: " . $e->getMessage();
+    }
+    header("Location: usuarios.php");
+    exit;
+}
+
 // Lidar com a exclusão de usuário
 if (isset($_GET['excluir_usuario'])) {
     $id_excluir = (int)$_GET['excluir_usuario'];
@@ -95,7 +155,7 @@ if (isset($_GET['redefinir_senha'])) {
 $busca = $_GET['busca'] ?? '';
 $filtro_status = $_GET['status_filtro'] ?? '';
 
-$sql = "SELECT id, nome, email, nivel_acesso, status, criado_em FROM usuarios WHERE 1=1";
+$sql = "SELECT id, nome, email, nivel_acesso, status, criado_em, idade, genero, sexo, cidade FROM usuarios WHERE 1=1";
 $params = [];
 
 if (!empty($busca)) {
@@ -126,10 +186,10 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Usuários - ALMOX</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <link rel="stylesheet" href="premium.css">
     <style>
         /* BASE & RESET */
-        *{ margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        *{ margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', sans-serif; }
         body{ background:#f1f5f9; color: #1e293b; transition: background 0.3s; }
 
         /* MENU LATERAL */
@@ -158,30 +218,41 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
         table{ width:100%; border-collapse:collapse; margin-top:20px; min-width:600px;}
         table th, table td{ padding:12px; border-bottom:1px solid #f1f5f9; text-align:left; }
         table th{ background:#e2e8f0; border-radius: 4px; }
-    
+
+        /* MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10000; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: white; padding: 25px; border-radius: 12px;
+            width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+            transform: translateY(-20px); transition: 0.3s; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
+        .grid-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group.full { grid-column: span 2; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #475569; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; background: #f8fafc; }
+        .form-group input:focus, .form-group select:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+        
+        .btn-add { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; margin-left:15px; }
+
         /* MODO ESCURO GLOBAL */
         body.dark-mode { background: #0f172a; color: #f1f5f9; }
-        body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .form-container, body.dark-mode .report-card, body.dark-mode .chart-box, body.dark-mode .activity-box { background: #1e293b; box-shadow: none; color: #f1f5f9; }
-        body.dark-mode .topbar h1, body.dark-mode .form-container h2, body.dark-mode .table-container h2 { color: #f1f5f9; }
-        body.dark-mode .card h3 { color: #94a3b8; }
-        body.dark-mode input, body.dark-mode select { background: #334155 !important; border: 1px solid #475569 !important; color: white !important; }
+        body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .modal-content { background: #1e293b; box-shadow: none; color: #f1f5f9; border: 1px solid rgba(255,255,255,0.05); }
+        body.dark-mode .topbar h1, body.dark-mode .table-container h2, body.dark-mode .modal-header h2 { color: #f1f5f9; }
+        body.dark-mode .card h3, body.dark-mode .form-group label { color: #94a3b8; }
+        body.dark-mode input, body.dark-mode select { background: #0f172a !important; border: 1px solid #334155 !important; color: white !important; }
         body.dark-mode table th { background: #0f172a !important; color: #f1f5f9; border-bottom: 1px solid #334155;}
         body.dark-mode table td, body.dark-mode tr { border-bottom: 1px solid #334155 !important; color: #cbd5e1; }
-        body.dark-mode .activity-item { border-bottom: 1px solid #334155; }
-        body.dark-mode .activity-item p { color: #94a3b8; }
-        
-        /* Ajustes extras para Tela de Login */
-        body.dark-mode .auth-card { background: #1e293b; box-shadow: none; }
-        body.dark-mode header { background: #0f172a; border-bottom: 1px solid #334155; }
-        body.dark-mode .tabs { background: #1e293b; border-bottom: 1px solid #334155; }
-        body.dark-mode .tab-btn { color: #94a3b8; }
-        body.dark-mode .tab-btn.active { background: #1e293b; color: #38bdf8; border-bottom: 3px solid #38bdf8; }
-        body.dark-mode .field label { color: #cbd5e1; }
-        body.dark-mode .form-utils { color: #94a3b8; }
-        body.dark-mode .alert-error { background: #450a0a; border-color: #7f1d1d; color: #fca5a5; }
-        body.dark-mode .alert-success { background: #052e16; border-color: #14532d; color: #86efac; }
-</style>
-    <link rel="stylesheet" href="premium.css">
+    </style>
 </head>
 <body>
 <style>
@@ -226,6 +297,7 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
     <div class="main">
         <div class="topbar">
             <h1>Gestão de Usuários e Privilégios</h1>
+            <button class="btn btn-add" onclick="abrirModalAdd()"><i class="fa fa-user-plus"></i> Novo Usuário</button>
         </div>
 
         <div class="cards">
@@ -264,55 +336,190 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Nome / Status</th>
-                        <th>Email</th>
-                        <th>Nível de Acesso (Gerenciamento)</th>
-                        <th>Ações</th>
+                        <th>Perfil</th>
+                        <th>Email & Contato</th>
+                        <th>Nível (Gerenciar)</th>
+                        <th>Ações Rápidas</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach($usuarios as $usr): ?>
                     <tr>
-                        <td><?= $usr['id'] ?></td>
+                        <td style="font-weight:bold; font-size:16px;">#<?= $usr['id'] ?></td>
                         <td>
-                            <strong><?= htmlspecialchars($usr['nome']) ?></strong>
-                            <?php if($usr['status'] === 'banido'): ?>
-                                <span style="margin-left: 8px; padding: 3px 8px; background: #ef4444; color: white; font-size: 11px; border-radius: 12px; font-weight: bold;">Banido</span>
-                            <?php else: ?>
-                                <span style="margin-left: 8px; padding: 3px 8px; background: #10b981; color: white; font-size: 11px; border-radius: 12px; font-weight: bold;">Ativo</span>
+                            <strong style="font-size:15px; display:block;"><?= htmlspecialchars($usr['nome']) ?></strong>
+                            <span style="font-size:12px; color:#64748b;">
+                                <?= $usr['idade'] ? $usr['idade'].' anos • ' : '' ?>
+                                <?= htmlspecialchars($usr['genero'] ?? '') ?>
+                                <?= $usr['sexo'] ? ' ('.htmlspecialchars($usr['sexo']).')' : '' ?>
+                            </span>
+                            <div style="margin-top:5px;">
+                                <?php if($usr['status'] === 'banido'): ?>
+                                    <span style="padding: 3px 8px; background: #ef4444; color: white; font-size: 11px; border-radius: 12px; font-weight: bold;">Banido</span>
+                                <?php else: ?>
+                                    <span style="padding: 3px 8px; background: #10b981; color: white; font-size: 11px; border-radius: 12px; font-weight: bold;">Ativo</span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td style="color:#64748b;">
+                            <i class="fa fa-envelope" style="margin-right:5px;"></i> <?= htmlspecialchars($usr['email']) ?><br>
+                            <?php if($usr['cidade']): ?>
+                            <i class="fa fa-map-marker-alt" style="margin-right:5px; margin-top:5px;"></i> <?= htmlspecialchars($usr['cidade']) ?>
                             <?php endif; ?>
                         </td>
-                        <td style="color:#64748b;"><?= htmlspecialchars($usr['email']) ?></td>
                         <td>
                             <form method="POST" action="usuarios.php" style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
                                 <input type="hidden" name="acao" value="mudar_nivel">
                                 <input type="hidden" name="usuario_id" value="<?= $usr['id'] ?>">
                                 <select name="nivel_acesso" style="padding:6px; border-radius:6px; border:1px solid #cbd5e1; outline:none;" <?= $usr['id'] === $_SESSION['usuario_id'] ? 'disabled' : '' ?>>
-                                    <option value="comum" <?= $usr['nivel_acesso'] == 'comum' ? 'selected' : '' ?>>Usuário Comum (Leitura)</option>
-                                    <option value="admin" <?= $usr['nivel_acesso'] == 'admin' ? 'selected' : '' ?>>Administrador (Total)</option>
+                                    <option value="comum" <?= $usr['nivel_acesso'] == 'comum' ? 'selected' : '' ?>>Usuário Comum</option>
+                                    <option value="admin" <?= $usr['nivel_acesso'] == 'admin' ? 'selected' : '' ?>>Administrador</option>
                                 </select>
                                 <?php if ($usr['id'] !== $_SESSION['usuario_id']): ?>
-                                    <button type="submit" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">Atualizar Cargo</button>
+                                    <button type="submit" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:12px;">Salvar Cargo</button>
                                 <?php endif; ?>
                             </form>
                         </td>
-                        <td style="display: flex; gap: 8px;">
+                        <td style="display: flex; gap: 8px; flex-wrap:wrap;">
+                            <button onclick='abrirModalEdit(<?= json_encode($usr) ?>)' style="color:#0ea5e9; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #e0f2fe; border-radius: 6px;"><i class="fa fa-pen"></i> Editar</button>
                             <?php if ($usr['id'] !== $_SESSION['usuario_id']): ?>
                                 <?php if($usr['status'] === 'banido'): ?>
                                     <a href="usuarios.php?banir_usuario=<?= $usr['id'] ?>&status=banido" style="color:#10b981; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #d1fae5; border-radius: 6px;"><i class="fa fa-unlock"></i> Desbanir</a>
                                 <?php else: ?>
-                                    <a href="usuarios.php?banir_usuario=<?= $usr['id'] ?>&status=ativo" onclick="return confirm('Deseja realmente banir o usuário <?= htmlspecialchars($usr['nome']) ?>? Ele perderá o acesso ao sistema.');" style="color:#f59e0b; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #fef3c7; border-radius: 6px;"><i class="fa fa-ban"></i> Banir</a>
+                                    <a href="usuarios.php?banir_usuario=<?= $usr['id'] ?>&status=ativo" onclick="return confirm('Deseja banir <?= htmlspecialchars($usr['nome']) ?>?');" style="color:#f59e0b; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #fef3c7; border-radius: 6px;"><i class="fa fa-ban"></i> Banir</a>
                                 <?php endif; ?>
-                                <a href="usuarios.php?redefinir_senha=<?= $usr['id'] ?>" onclick="return confirm('Redefinir a senha de <?= htmlspecialchars($usr['nome']) ?> para 123456?');" style="color:#3b82f6; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #dbeafe; border-radius: 6px;"><i class="fa fa-key"></i> Senha</a>
-                                <a href="usuarios.php?excluir_usuario=<?= $usr['id'] ?>" onclick="return confirm('ATENÇÃO: Deseja realmente excluir o usuário <?= htmlspecialchars($usr['nome']) ?> de forma permanente?');" style="color:#ef4444; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #fef2f2; border-radius: 6px;"><i class="fa fa-user-xmark"></i> Remover</a>
+                                <a href="usuarios.php?excluir_usuario=<?= $usr['id'] ?>" onclick="return confirm('Deseja realmente excluir <?= htmlspecialchars($usr['nome']) ?> permanentemente?');" style="color:#ef4444; text-decoration:none; font-weight:bold; font-size: 13px; display:inline-block; padding: 6px 12px; background: #fef2f2; border-radius: 6px;"><i class="fa fa-trash"></i> Excluir</a>
                             <?php else: ?>
-                                <span style="color:#94a3b8; font-size:13px; font-weight: bold;"><i class="fa fa-user-check"></i> Você (Logado)</span>
+                                <span style="color:#94a3b8; font-size:13px; font-weight: bold;"><i class="fa fa-user-check"></i> Você</span>
                             <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- MODAL ADICIONAR USUÁRIO -->
+    <div class="modal-overlay" id="modalAdd">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Criar Nova Conta</h2>
+                <button class="modal-close" onclick="fecharModal('modalAdd')"><i class="fa fa-times"></i></button>
+            </div>
+            <form method="POST" action="usuarios.php">
+                <input type="hidden" name="acao" value="adicionar_usuario">
+                <div class="grid-forms">
+                    <div class="form-group full">
+                        <label>Nome Completo</label>
+                        <input type="text" name="nome" required placeholder="João da Silva">
+                    </div>
+                    <div class="form-group full">
+                        <label>Email (Gmail ou outros)</label>
+                        <input type="email" name="email" required placeholder="exemplo@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha de Acesso</label>
+                        <input type="password" name="senha" required placeholder="******">
+                    </div>
+                    <div class="form-group">
+                        <label>Nível de Acesso</label>
+                        <select name="nivel_acesso" required>
+                            <option value="comum">Usuário Comum</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Idade</label>
+                        <input type="number" name="idade" placeholder="Ex: 25" min="1" max="120">
+                    </div>
+                    <div class="form-group">
+                        <label>Gênero</label>
+                        <select name="genero">
+                            <option value="">Não informar</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Feminino">Feminino</option>
+                            <option value="Não-Binário">Não-Binário</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sexo Biológico</label>
+                        <select name="sexo">
+                            <option value="">Não informar</option>
+                            <option value="M">Masculino (M)</option>
+                            <option value="F">Feminino (F)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cidade</label>
+                        <input type="text" name="cidade" placeholder="Ex: São Paulo">
+                    </div>
+                </div>
+                <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                    <button type="submit" style="padding: 12px 25px;"><i class="fa fa-check"></i> Cadastrar Usuário</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR USUÁRIO -->
+    <div class="modal-overlay" id="modalEdit">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Usuário e ID</h2>
+                <button class="modal-close" onclick="fecharModal('modalEdit')"><i class="fa fa-times"></i></button>
+            </div>
+            <form method="POST" action="usuarios.php">
+                <input type="hidden" name="acao" value="editar_usuario">
+                <input type="hidden" name="id_atual" id="edit_id_atual">
+                <div class="grid-forms">
+                    <div class="form-group">
+                        <label>ID do Usuário (CUIDADO!)</label>
+                        <input type="number" name="novo_id" id="edit_novo_id" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input type="text" name="nome" id="edit_nome" required>
+                    </div>
+                    <div class="form-group full">
+                        <label>Email</label>
+                        <input type="email" name="email" id="edit_email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Idade</label>
+                        <input type="number" name="idade" id="edit_idade" min="1" max="120">
+                    </div>
+                    <div class="form-group">
+                        <label>Gênero</label>
+                        <select name="genero" id="edit_genero">
+                            <option value="">Não informar</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Feminino">Feminino</option>
+                            <option value="Não-Binário">Não-Binário</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sexo Biológico</label>
+                        <select name="sexo" id="edit_sexo">
+                            <option value="">Não informar</option>
+                            <option value="M">Masculino (M)</option>
+                            <option value="F">Feminino (F)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Cidade</label>
+                        <input type="text" name="cidade" id="edit_cidade">
+                    </div>
+                </div>
+                <div style="background:#fffbeb; color:#d97706; padding:10px; border-radius:8px; margin-top:10px; font-size:12px;">
+                    <i class="fa fa-warning"></i> Alterar o ID mudará o vínculo no banco de dados. Os logs continuarão atrelados ao novo ID graças à configuração em cascata.
+                </div>
+                <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                    <button type="submit" style="padding: 12px 25px;"><i class="fa fa-save"></i> Salvar Alterações</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -326,6 +533,27 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
                 document.body.classList.add("dark-mode");
             }
         });
-</script>
+
+        function abrirModalAdd() {
+            document.getElementById('modalAdd').classList.add('active');
+        }
+
+        function abrirModalEdit(user) {
+            document.getElementById('edit_id_atual').value = user.id;
+            document.getElementById('edit_novo_id').value = user.id;
+            document.getElementById('edit_nome').value = user.nome;
+            document.getElementById('edit_email').value = user.email;
+            document.getElementById('edit_idade').value = user.idade || '';
+            document.getElementById('edit_genero').value = user.genero || '';
+            document.getElementById('edit_sexo').value = user.sexo || '';
+            document.getElementById('edit_cidade').value = user.cidade || '';
+            
+            document.getElementById('modalEdit').classList.add('active');
+        }
+
+        function fecharModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+    </script>
 </body>
 </html>

@@ -1,8 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* Premium Aesthetics Optmization */
-* {
-    font-family: 'Inter', sans-serif !important;
+body {
+    font-family: 'Inter', sans-serif;
+}
+button, input, select, textarea {
+    font-family: inherit;
 }
 
 body {
