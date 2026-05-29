@@ -16,8 +16,13 @@ if (!isset($_SESSION['nivel_acesso']) || $_SESSION['nivel_acesso'] !== 'admin') 
 if (isset($_GET['excluir_usuario'])) {
     $id_excluir = (int)$_GET['excluir_usuario'];
     if ($id_excluir !== $_SESSION['usuario_id']) { 
+        $usr_nome = $pdo->query("SELECT nome FROM usuarios WHERE id = $id_excluir")->fetchColumn();
         $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id = ?");
         $stmt->execute([$id_excluir]);
+        
+        $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, ?, ?)")
+            ->execute([$_SESSION['usuario_id'], 'Excluir Usuário', "Excluiu o usuário ID $id_excluir (" . ($usr_nome ?: 'Desconhecido') . ")"]);
+
         $_SESSION['msg_sucesso'] = "Usuário excluído com sucesso!";
     } else {
         $_SESSION['msg_erro'] = "Ação negada.";
@@ -33,8 +38,16 @@ if (isset($_GET['banir_usuario'])) {
     $novo_status = $status_atual === 'banido' ? 'ativo' : 'banido';
     
     if ($id_banir !== $_SESSION['usuario_id']) { 
+        $usr_nome = $pdo->query("SELECT nome FROM usuarios WHERE id = $id_banir")->fetchColumn();
         $stmt = $pdo->prepare("UPDATE usuarios SET status = ? WHERE id = ?");
         $stmt->execute([$novo_status, $id_banir]);
+        
+        $acao = $novo_status === 'banido' ? 'Banir Usuário' : 'Desbanir Usuário';
+        $detalhes = $novo_status === 'banido' ? "Baniu o usuário ID $id_banir (" . ($usr_nome ?: 'Desconhecido') . ")" : "Desbaniu o usuário ID $id_banir (" . ($usr_nome ?: 'Desconhecido') . ")";
+        
+        $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, ?, ?)")
+            ->execute([$_SESSION['usuario_id'], $acao, $detalhes]);
+
         $_SESSION['msg_sucesso'] = "Status de banimento atualizado!";
     }
     header("Location: usuarios.php");
@@ -47,23 +60,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     $novo_nivel = $_POST['nivel_acesso']; 
     
     if ($id_usuario !== $_SESSION['usuario_id'] && in_array($novo_nivel, ['admin', 'comum'])) {
+        $usr_nome = $pdo->query("SELECT nome FROM usuarios WHERE id = $id_usuario")->fetchColumn();
         $stmt = $pdo->prepare("UPDATE usuarios SET nivel_acesso = ? WHERE id = ?");
         $stmt->execute([$novo_nivel, $id_usuario]);
+        
+        $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, ?, ?)")
+            ->execute([$_SESSION['usuario_id'], 'Mudar Nível', "Alterou nível do ID $id_usuario (" . ($usr_nome ?: 'Desconhecido') . ") para $novo_nivel"]);
+
         $_SESSION['msg_sucesso'] = "Nível de acesso alterado com sucesso!";
     }
     header("Location: usuarios.php");
     exit;
 }
 
-// Obter usuários (com filtro de pesquisa)
+// Obter usuários (com filtro de pesquisa e status)
 $busca = $_GET['busca'] ?? '';
+$filtro_status = $_GET['status_filtro'] ?? '';
+
+$sql = "SELECT id, nome, email, nivel_acesso, status, criado_em FROM usuarios WHERE 1=1";
+$params = [];
+
 if (!empty($busca)) {
-    $stmt = $pdo->prepare("SELECT id, nome, email, nivel_acesso, status, criado_em FROM usuarios WHERE id = ? OR nome LIKE ? ORDER BY id ASC");
-    $stmt->execute([$busca, "%$busca%"]);
-    $usuarios = $stmt->fetchAll();
-} else {
-    $usuarios = $pdo->query("SELECT id, nome, email, nivel_acesso, status, criado_em FROM usuarios ORDER BY id ASC")->fetchAll();
+    $sql .= " AND (id = ? OR nome LIKE ?)";
+    $params[] = $busca;
+    $params[] = "%$busca%";
 }
+
+if (!empty($filtro_status) && in_array($filtro_status, ['ativo', 'banido'])) {
+    $sql .= " AND status = ?";
+    $params[] = $filtro_status;
+}
+
+$sql .= " ORDER BY id ASC";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
+$usuarios = $stmt->fetchAll();
 
 // Estatísticas
 $totalUsuarios = count($usuarios);
@@ -192,8 +224,13 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
             <h2>Lista de Usuários</h2>
             <form method="GET" action="usuarios.php" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
                 <input type="text" name="busca" placeholder="Pesquisar por ID ou Nome..." value="<?= htmlspecialchars($busca) ?>" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%; max-width: 350px; outline: none;">
-                <button type="submit" style="padding: 10px 15px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;"><i class="fa fa-search"></i> Pesquisar</button>
-                <?php if(!empty($busca)): ?>
+                <select name="status_filtro" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none;">
+                    <option value="">Todos os Status</option>
+                    <option value="ativo" <?= (isset($_GET['status_filtro']) && $_GET['status_filtro'] == 'ativo') ? 'selected' : '' ?>>Ativos</option>
+                    <option value="banido" <?= (isset($_GET['status_filtro']) && $_GET['status_filtro'] == 'banido') ? 'selected' : '' ?>>Banidos</option>
+                </select>
+                <button type="submit" style="padding: 10px 15px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;"><i class="fa fa-search"></i> Filtrar</button>
+                <?php if(!empty($busca) || !empty($filtro_status)): ?>
                     <a href="usuarios.php" style="padding: 10px 15px; background: #94a3b8; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; display: flex; align-items: center;">Limpar</a>
                 <?php endif; ?>
             </form>

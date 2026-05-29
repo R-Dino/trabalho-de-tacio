@@ -43,6 +43,17 @@ $totalProdutos = $pdo->query("SELECT COUNT(*) FROM produtos")->fetchColumn() ?: 
 $totalMovimentacoes = $pdo->query("SELECT COUNT(*) FROM movimentacoes")->fetchColumn() ?: 0;
 $totalFornecedores = $pdo->query("SELECT COUNT(*) FROM fornecedores")->fetchColumn() ?: 0;
 $baixoEstoque = $pdo->query("SELECT COUNT(*) FROM produtos WHERE status = 'Baixo' OR status = 'Zerado'")->fetchColumn() ?: 0;
+
+// Obter logs do sistema
+$logsSistema = [];
+try {
+    $stmtLogs = $pdo->query("SELECT l.*, u.nome as responsavel FROM logs_atividades l LEFT JOIN usuarios u ON l.usuario_id = u.id ORDER BY l.id DESC LIMIT 50");
+    if ($stmtLogs) {
+        $logsSistema = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
+    }
+} catch (PDOException $e) {
+    // Caso a tabela não exista, $logsSistema continua vazio
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -204,17 +215,32 @@ table th{ background:#e2e8f0; }
 
     <!-- TABELA -->
     <div class="table-container">
-        <h2>Histórico de Relatórios Gerados na Sessão</h2>
-        <table id="tabelaRelatorios">
+        <h2>Logs do Sistema (Atividades Recentes)</h2>
+        <table>
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Relatório</th>
-                    <th>Data</th>
-                    <th>Status</th>
+                    <th>Responsável</th>
+                    <th>Ação</th>
+                    <th>Detalhes</th>
+                    <th>Data/Hora</th>
                 </tr>
             </thead>
             <tbody>
+                <?php foreach($logsSistema as $log): ?>
+                <tr>
+                    <td><?= $log['id'] ?></td>
+                    <td><?= htmlspecialchars($log['responsavel'] ?? 'Sistema') ?></td>
+                    <td><strong><?= htmlspecialchars($log['acao']) ?></strong></td>
+                    <td><?= htmlspecialchars($log['detalhes']) ?></td>
+                    <td><?= date('d/m/Y H:i', strtotime($log['data_hora'])) ?></td>
+                </tr>
+                <?php endforeach; ?>
+                <?php if (empty($logsSistema)): ?>
+                <tr>
+                    <td colspan="5" style="text-align: center;">Nenhuma atividade recente registrada.</td>
+                </tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -230,18 +256,7 @@ function toggleMenu(){
 let contador = 1;
 
 function gerarRelatorio(tipo){
-    let tabela = document.querySelector("#tabelaRelatorios tbody");
-    let linha = tabela.insertRow();
-    let dataAtual = new Date().toLocaleDateString("pt-BR") + ' ' + new Date().toLocaleTimeString("pt-BR");
-
-    linha.innerHTML = `
-        <td>${contador}</td>
-        <td>${tipo}</td>
-        <td>${dataAtual}</td>
-        <td>Gerado</td>
-    `;
-    contador++;
-    alert("Relatório de " + tipo + " gerado com sucesso! (Demonstração)");
+    alert("Simulação de geração de relatório de " + tipo + " disparada.");
 }
 
         window.addEventListener('DOMContentLoaded', () => {

@@ -12,6 +12,18 @@ try {
     die("Erro de conexão com o banco de dados: " . $e->getMessage());
 }
 
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS logs_atividades (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        usuario_id INT,
+        acao VARCHAR(100),
+        detalhes TEXT,
+        data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+} catch (PDOException $e) {
+    // ignorar
+}
+
 // Lógica Global de Logoff por Inatividade (30 minutos)
 if (isset($_SESSION['usuario_id'])) {
     if (isset($_SESSION['ultima_atividade']) && (time() - $_SESSION['ultima_atividade'] > 1800)) {
