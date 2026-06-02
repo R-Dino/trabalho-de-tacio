@@ -211,6 +211,7 @@ table th{ background:#e2e8f0; }
     <ul class="menu">
         <li><a href="telainicial.php"><i class="fa fa-house"></i> Início</a></li>
         <li><a href="dashboard.php"><i class="fa fa-chart-line"></i> Dashboard</a></li>
+        <li><a href="ia.php" style="color: #38bdf8; font-weight: bold;"><i class="fa fa-robot"></i> Assistente IA</a></li>
         <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
         <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
         <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
