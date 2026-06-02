@@ -392,11 +392,11 @@ if ($totalFornecedores == 0) {
             
             <div class="chat-messages" id="chatMessages">
                 <div class="message ai">
-                    Olá! Sou sua IA de gerenciamento. Posso analisar dados específicos para você. 
+                    Olá! Sou sua IA de gerenciamento. Agora estou conectada à internet e posso analisar dados internos e de mercado para você! 
                     <br><br>Experimente me perguntar algo como: <br>
-                    - <i>"O que devo comprar?"</i><br>
-                    - <i>"Quais produtos estão parados?"</i><br>
-                    - <i>"Fazer resumo financeiro"</i>
+                    - <i>"Onde comprar detergente líquido?"</i><br>
+                    - <i>"Qual o preço de papel toalha?"</i><br>
+                    - <i>"Quais produtos estão parados?"</i>
                 </div>
                 
                 <div class="typing-indicator" id="typingIndicator">
@@ -434,9 +434,9 @@ if ($totalFornecedores == 0) {
             typing.style.display = 'flex';
             chat.scrollTop = chat.scrollHeight;
 
-            setTimeout(() => {
+            setTimeout(async () => {
+                const resposta = await processarLogicaIA(text.toLowerCase());
                 typing.style.display = 'none';
-                const resposta = processarLogicaIA(text.toLowerCase());
                 addMessage(resposta, 'ai');
             }, 1200 + Math.random() * 1000);
         }
@@ -449,22 +449,63 @@ if ($totalFornecedores == 0) {
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Lógica de Processamento de Linguagem Natural (Simulação NLP no Frontend)
-        function processarLogicaIA(pergunta) {
-            if (pergunta.includes("comprar") || pergunta.includes("falta") || pergunta.includes("zerado")) {
-                return "Com base na análise do banco de dados, os produtos que necessitam de <b>atenção para compra</b> são aqueles sinalizados nos cards acima (Status Baixo ou Zerado). Recomendo gerar um Relatório de Estoque Crítico na página de Relatórios.";
+        // Lógica de Processamento de Linguagem Natural com Integração Externa API
+        async function processarLogicaIA(pergunta) {
+            
+            // Nova funcionalidade: Pesquisa Externa (Internet)
+            const searchKeywords = ["preço de", "valor do", "onde comprar", "mais barato", "pesquisar por", "preço do", "pesquisar", "valor de", "busque por"];
+            let isExternalSearch = false;
+            let searchTerm = "";
+
+            for (const kw of searchKeywords) {
+                if (pergunta.includes(kw)) {
+                    isExternalSearch = true;
+                    searchTerm = pergunta.split(kw)[1].trim();
+                    break;
+                }
+            }
+
+            // Se for uma pesquisa externa e houver termo
+            if (isExternalSearch && searchTerm.length > 0) {
+                try {
+                    const response = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(searchTerm)}&limit=3`);
+                    const data = await response.json();
+                    
+                    if (data.results && data.results.length > 0) {
+                        let resultHtml = `Pesquisei na internet por <b>${searchTerm}</b> para encontrar os melhores valores e locais de compra:<br><br>`;
+                        
+                        data.results.forEach(item => {
+                            resultHtml += `
+                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #10b981;">
+                                <strong>${item.title}</strong><br>
+                                <span style="color: #10b981; font-weight: bold; font-size: 1.1rem;">R$ ${item.price.toFixed(2)}</span><br>
+                                <a href="${item.permalink}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.9rem;"><i class="fa fa-external-link"></i> Ver oferta no Mercado Livre</a>
+                            </div>`;
+                        });
+                        return resultHtml;
+                    } else {
+                        return `Fiz uma varredura externa por <b>${searchTerm}</b>, mas não encontrei ofertas disponíveis no momento.`;
+                    }
+                } catch (error) {
+                    return `Tentei buscar preços externos para <b>${searchTerm}</b>, mas minha conexão com a internet falhou.`;
+                }
+            }
+
+            // Respostas baseadas no almoxarifado interno
+            if (pergunta.includes("falta") || pergunta.includes("zerado") || (pergunta.includes("comprar") && !isExternalSearch)) {
+                return "Com base na análise interna, os produtos que necessitam de <b>atenção para compra</b> são aqueles sinalizados nos cards acima (Status Baixo ou Zerado). Recomendo gerar um Relatório de Estoque Crítico na página de Relatórios.";
             } 
             else if (pergunta.includes("parado") || pergunta.includes("ocioso") || pergunta.includes("vencido")) {
                 return "Identifiquei produtos que não têm movimentação há mais de 30 dias (listados acima em 'Capital Estagnado'). Sugiro que faça uma revisão física desses itens e considere reduzir o estoque mínimo deles no sistema.";
             }
-            else if (pergunta.includes("financeiro") || pergunta.includes("valor") || pergunta.includes("dinheiro")) {
+            else if (pergunta.includes("financeiro") || (pergunta.includes("valor") && !isExternalSearch) || pergunta.includes("dinheiro")) {
                 return "Atualmente, a maioria do capital do seu almoxarifado está dividida entre as diversas categorias cadastradas. Para um valor exato, acesse o módulo de <b>Relatórios Financeiros</b>. Minha recomendação atual é cortar gastos excessivos com produtos de baixa rotatividade.";
             }
             else if (pergunta.includes("obrigado") || pergunta.includes("valeu")) {
-                return "Por nada! Estou sempre aqui monitorando o banco de dados em tempo real para garantir que sua operação não pare.";
+                return "Por nada! Estou sempre aqui monitorando o almoxarifado e a internet em tempo real para garantir que sua operação seja a melhor possível.";
             }
             else {
-                return "Desculpe, meu modelo neural foca em dados operacionais de estoque, compras e movimentações. Pode reformular a pergunta com foco no <b>almoxarifado</b>?";
+                return "Desculpe, meu modelo neural foca no almoxarifado interno e em buscas de mercado (preços). Experimente perguntar algo como: <br><br><b>'onde comprar sabão em pó'</b> <br>ou <b>'preço de desinfetante'</b>.";
             }
         }
     </script>
