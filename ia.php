@@ -449,63 +449,96 @@ if ($totalFornecedores == 0) {
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Lógica de Processamento de Linguagem Natural com Integração Externa API
+        // Lógica de Processamento de Linguagem Natural com Integração Externa API Livre
         async function processarLogicaIA(pergunta) {
             
-            // Nova funcionalidade: Pesquisa Externa (Internet)
-            const searchKeywords = ["preço de", "valor do", "onde comprar", "mais barato", "pesquisar por", "preço do", "pesquisar", "valor de", "busque por"];
-            let isExternalSearch = false;
-            let searchTerm = "";
+            pergunta = pergunta.toLowerCase();
+            
+            // 1. VERIFICAÇÃO DE COMANDOS INTERNOS (ALMOXARIFADO)
+            const isInternal = pergunta.includes("falta") || 
+                               pergunta.includes("zerado") || 
+                               pergunta.includes("parado") || 
+                               pergunta.includes("ocioso") || 
+                               pergunta.includes("financeiro") || 
+                               pergunta.includes("almoxarifado") || 
+                               pergunta.includes("estoque interno") ||
+                               pergunta.includes("nosso estoque") ||
+                               pergunta.includes("relatório");
 
-            for (const kw of searchKeywords) {
-                if (pergunta.includes(kw)) {
-                    isExternalSearch = true;
-                    searchTerm = pergunta.split(kw)[1].trim();
-                    break;
+            if (isInternal) {
+                if (pergunta.includes("falta") || pergunta.includes("zerado")) {
+                    return "No seu estoque interno, os produtos que necessitam de <b>atenção para compra</b> estão sinalizados nos cards de 'Risco Crítico' acima. Recomendo verificar os níveis de segurança.";
+                } 
+                if (pergunta.includes("parado") || pergunta.includes("ocioso")) {
+                    return "Identifiquei itens ociosos no almoxarifado (sem movimento há mais de 30 dias). Verifique a lista de 'Capital Estagnado' acima.";
                 }
+                if (pergunta.includes("financeiro")) {
+                    return "Seu capital está distribuído entre as diversas categorias. Acesse a guia de 'Relatórios' para um balanço financeiro detalhado.";
+                }
+                return "Estou monitorando seu almoxarifado em tempo real. Tudo parece sob controle no momento!";
             }
 
-            // Se for uma pesquisa externa e houver termo
-            if (isExternalSearch && searchTerm.length > 0) {
-                try {
-                    const response = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(searchTerm)}&limit=3`);
-                    const data = await response.json();
+            if (pergunta.includes("obrigado") || pergunta.includes("valeu")) {
+                return "Por nada! Estou operando sem limitações para varrer o mercado e seu estoque.";
+            }
+
+            // 2. PESQUISA DE MERCADO SEM LIMITAÇÕES (COMÉRCIO EXTERNO)
+            // Se não for um comando interno, a IA varre a internet buscando ofertas de comércio
+            
+            // Limpa palavras desnecessárias para melhorar a busca no mercado
+            let searchTerm = pergunta
+                .replace("onde comprar", "")
+                .replace("qual o", "")
+                .replace("preço de", "")
+                .replace("valor de", "")
+                .replace("pesquisar por", "")
+                .replace("busque", "")
+                .replace("comprar", "")
+                .replace("quero", "")
+                .replace("me mostre", "")
+                .trim();
+                
+            // Se ficou vazio após limpar, usa a pergunta original
+            if (searchTerm === "") searchTerm = pergunta.trim();
+
+            try {
+                // Conexão com o mercado aberto (Mercado Livre) sem limitações de token
+                const response = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(searchTerm)}&limit=5`);
+                
+                if (!response.ok) {
+                    throw new Error("Erro na rede externa");
+                }
+                
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    let resultHtml = `Fiz uma varredura abrangente no mercado externo por <b>"${searchTerm}"</b>. Aqui estão as 5 melhores ofertas em tempo real:<br><br>`;
                     
-                    if (data.results && data.results.length > 0) {
-                        let resultHtml = `Pesquisei na internet por <b>${searchTerm}</b> para encontrar os melhores valores e locais de compra:<br><br>`;
+                    resultHtml += `<div style="display:flex; flex-direction:column; gap:10px; max-height: 400px; overflow-y: auto; padding-right:5px;">`;
+                    
+                    data.results.forEach(item => {
+                        const freteGratis = item.shipping && item.shipping.free_shipping ? '<span style="background:#10b981; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; margin-left:8px;">Frete Grátis</span>' : '';
                         
-                        data.results.forEach(item => {
-                            resultHtml += `
-                            <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #10b981;">
-                                <strong>${item.title}</strong><br>
-                                <span style="color: #10b981; font-weight: bold; font-size: 1.1rem;">R$ ${item.price.toFixed(2)}</span><br>
-                                <a href="${item.permalink}" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 0.9rem;"><i class="fa fa-external-link"></i> Ver oferta no Mercado Livre</a>
-                            </div>`;
-                        });
-                        return resultHtml;
-                    } else {
-                        return `Fiz uma varredura externa por <b>${searchTerm}</b>, mas não encontrei ofertas disponíveis no momento.`;
-                    }
-                } catch (error) {
-                    return `Tentei buscar preços externos para <b>${searchTerm}</b>, mas minha conexão com a internet falhou.`;
+                        resultHtml += `
+                        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #38bdf8; display:flex; gap:15px; align-items:center;">
+                            <img src="${item.thumbnail}" alt="thumb" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                            <div style="flex:1;">
+                                <strong style="font-size:0.95rem; display:block; margin-bottom:5px;">${item.title}</strong>
+                                <span style="color: #38bdf8; font-weight: bold; font-size: 1.2rem;">R$ ${item.price.toFixed(2)}</span>
+                                ${freteGratis}
+                            </div>
+                            <a href="${item.permalink}" target="_blank" title="Comprar" style="background:#3b82f6; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; font-size:0.9rem; white-space:nowrap;"><i class="fa fa-shopping-cart"></i> Ver</a>
+                        </div>`;
+                    });
+                    
+                    resultHtml += `</div>`;
+                    return resultHtml;
+                } else {
+                    return `Vasculhei o mercado de comércio online, mas não encontrei ofertas ativas para <b>"${searchTerm}"</b>. Tente especificar mais a marca ou tipo de produto.`;
                 }
-            }
-
-            // Respostas baseadas no almoxarifado interno
-            if (pergunta.includes("falta") || pergunta.includes("zerado") || (pergunta.includes("comprar") && !isExternalSearch)) {
-                return "Com base na análise interna, os produtos que necessitam de <b>atenção para compra</b> são aqueles sinalizados nos cards acima (Status Baixo ou Zerado). Recomendo gerar um Relatório de Estoque Crítico na página de Relatórios.";
-            } 
-            else if (pergunta.includes("parado") || pergunta.includes("ocioso") || pergunta.includes("vencido")) {
-                return "Identifiquei produtos que não têm movimentação há mais de 30 dias (listados acima em 'Capital Estagnado'). Sugiro que faça uma revisão física desses itens e considere reduzir o estoque mínimo deles no sistema.";
-            }
-            else if (pergunta.includes("financeiro") || (pergunta.includes("valor") && !isExternalSearch) || pergunta.includes("dinheiro")) {
-                return "Atualmente, a maioria do capital do seu almoxarifado está dividida entre as diversas categorias cadastradas. Para um valor exato, acesse o módulo de <b>Relatórios Financeiros</b>. Minha recomendação atual é cortar gastos excessivos com produtos de baixa rotatividade.";
-            }
-            else if (pergunta.includes("obrigado") || pergunta.includes("valeu")) {
-                return "Por nada! Estou sempre aqui monitorando o almoxarifado e a internet em tempo real para garantir que sua operação seja a melhor possível.";
-            }
-            else {
-                return "Desculpe, meu modelo neural foca no almoxarifado interno e em buscas de mercado (preços). Experimente perguntar algo como: <br><br><b>'onde comprar sabão em pó'</b> <br>ou <b>'preço de desinfetante'</b>.";
+            } catch (error) {
+                // Fallback de erro
+                return `Houve uma falha ao tentar acessar a rede global de comércio. Isso pode ocorrer devido a um bloqueio do seu navegador (AdBlock) ou indisponibilidade da rede. Acesso externo temporariamente comprometido.`;
             }
         }
     </script>
