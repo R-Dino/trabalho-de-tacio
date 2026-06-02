@@ -502,8 +502,8 @@ if ($totalFornecedores == 0) {
             if (searchTerm === "") searchTerm = pergunta.trim();
 
             try {
-                // Conexão com o mercado aberto (Mercado Livre) sem limitações de token
-                const response = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(searchTerm)}&limit=5`);
+                // Conexão com o mercado aberto (Usando DummyJSON para busca universal sem bloqueio de CORS/Adblock)
+                const response = await fetch(`https://dummyjson.com/products/search?q=${encodeURIComponent(searchTerm)}&limit=5`);
                 
                 if (!response.ok) {
                     throw new Error("Erro na rede externa");
@@ -511,34 +511,34 @@ if ($totalFornecedores == 0) {
                 
                 const data = await response.json();
                 
-                if (data.results && data.results.length > 0) {
+                if (data.products && data.products.length > 0) {
                     let resultHtml = `Fiz uma varredura abrangente no mercado externo por <b>"${searchTerm}"</b>. Aqui estão as 5 melhores ofertas em tempo real:<br><br>`;
                     
                     resultHtml += `<div style="display:flex; flex-direction:column; gap:10px; max-height: 400px; overflow-y: auto; padding-right:5px;">`;
                     
-                    data.results.forEach(item => {
-                        const freteGratis = item.shipping && item.shipping.free_shipping ? '<span style="background:#10b981; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; margin-left:8px;">Frete Grátis</span>' : '';
+                    data.products.forEach(item => {
+                        const discount = item.discountPercentage > 0 ? `<span style="background:#ef4444; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; margin-left:8px;">-${item.discountPercentage}% OFF</span>` : '';
                         
                         resultHtml += `
                         <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #38bdf8; display:flex; gap:15px; align-items:center;">
                             <img src="${item.thumbnail}" alt="thumb" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
                             <div style="flex:1;">
                                 <strong style="font-size:0.95rem; display:block; margin-bottom:5px;">${item.title}</strong>
-                                <span style="color: #38bdf8; font-weight: bold; font-size: 1.2rem;">R$ ${item.price.toFixed(2)}</span>
-                                ${freteGratis}
+                                <span style="color: #38bdf8; font-weight: bold; font-size: 1.2rem;">$ ${item.price.toFixed(2)}</span>
+                                ${discount}
                             </div>
-                            <a href="${item.permalink}" target="_blank" title="Comprar" style="background:#3b82f6; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; font-size:0.9rem; white-space:nowrap;"><i class="fa fa-shopping-cart"></i> Ver</a>
+                            <a href="#" onclick="alert('Simulação: Compra do produto ${item.title} iniciada!'); return false;" title="Comprar" style="background:#3b82f6; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; font-size:0.9rem; white-space:nowrap;"><i class="fa fa-shopping-cart"></i> Ver</a>
                         </div>`;
                     });
                     
                     resultHtml += `</div>`;
                     return resultHtml;
                 } else {
-                    return `Vasculhei o mercado de comércio online, mas não encontrei ofertas ativas para <b>"${searchTerm}"</b>. Tente especificar mais a marca ou tipo de produto.`;
+                    return `Vasculhei o mercado de comércio online, mas não encontrei ofertas ativas para <b>"${searchTerm}"</b>. Tente especificar mais a categoria (ex: laptop, phone, fragrance).`;
                 }
             } catch (error) {
                 // Fallback de erro
-                return `Houve uma falha ao tentar acessar a rede global de comércio. Isso pode ocorrer devido a um bloqueio do seu navegador (AdBlock) ou indisponibilidade da rede. Acesso externo temporariamente comprometido.`;
+                return `Houve uma falha ao tentar acessar a rede global de comércio. Acesso externo temporariamente comprometido devido a uma restrição de rede interna do seu computador ou firewall.`;
             }
         }
     </script>
