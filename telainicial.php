@@ -1,23 +1,16 @@
 <?php
 session_start();
 require 'db.php';
-
 if (!isset($_SESSION['usuario_id'])) {
     header("Location: index.php");
     exit;
 }
-
-// Obter totais com tratamento para valores nulos (COALESCE)
 $stmt = $pdo->query("SELECT COUNT(*) FROM produtos");
 $totalProdutos = $stmt->fetchColumn() ?: 0;
-
 $stmt = $pdo->query("SELECT COUNT(*) FROM produtos WHERE status IN ('Baixo', 'Zerado')");
 $baixoEstoque = $stmt->fetchColumn() ?: 0;
-
 $stmt = $pdo->query("SELECT COALESCE(SUM(quantidade), 0) FROM produtos");
 $totalEstoque = $stmt->fetchColumn();
-
-// Obter últimos produtos cadastrados
 $stmt = $pdo->query("SELECT id, nome, quantidade, status FROM produtos ORDER BY id DESC LIMIT 5");
 $ultimosProdutos = $stmt->fetchAll();
 ?>
@@ -28,7 +21,6 @@ $ultimosProdutos = $stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALMOX | Painel de Controle</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         :root {
             --primary-color: #2563eb;
@@ -43,22 +35,18 @@ $ultimosProdutos = $stmt->fetchAll();
             --shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
             --transition: all 0.3s ease;
         }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Arial, sans-serif;
         }
-
         body {
             background: var(--bg-color);
             color: var(--text-color);
             display: flex;
             min-height: 100vh;
         }
-
-        /* MENU LATERAL (SIDEBAR) */
         .sidebar {
             width: 260px;
             background: var(--dark-color);
@@ -72,28 +60,23 @@ $ultimosProdutos = $stmt->fetchAll();
             z-index: 999;
             box-shadow: 4px 0 10px rgba(0,0,0,0.05);
         }
-
         .logo {
             text-align: center;
             padding-bottom: 24px;
             border-bottom: 1px solid var(--dark-light);
             margin-bottom: 24px;
         }
-
         .logo h2 {
             color: var(--accent-color);
             font-size: 1.6rem;
             letter-spacing: 1px;
         }
-
         .menu {
             list-style: none;
         }
-
         .menu li {
             margin-bottom: 8px;
         }
-
         .menu a {
             color: #94a3b8;
             text-decoration: none;
@@ -105,21 +88,16 @@ $ultimosProdutos = $stmt->fetchAll();
             font-weight: 500;
             transition: var(--transition);
         }
-
         .menu a:hover, .menu li.active a {
             background: var(--dark-light);
             color: var(--white);
         }
-
-        /* CONTEÚDO PRINCIPAL (MAIN) */
         .main {
             flex: 1;
             padding: 40px;
-            margin-left: 260px; /* Alinhado para telas grandes */
+            margin-left: 260px; 
             transition: var(--transition);
         }
-
-        /* BARRA SUPERIOR (TOPBAR) */
         .topbar {
             background: var(--white);
             padding: 20px 32px;
@@ -130,12 +108,10 @@ $ultimosProdutos = $stmt->fetchAll();
             box-shadow: var(--shadow);
             margin-bottom: 32px;
         }
-
         .topbar h1 {
             font-size: 1.5rem;
             color: var(--text-color);
         }
-
         .btn-logout {
             background: #ef4444;
             color: var(--white);
@@ -149,13 +125,10 @@ $ultimosProdutos = $stmt->fetchAll();
             gap: 8px;
             transition: var(--transition);
         }
-
         .btn-logout:hover {
             background: #dc2626;
             transform: translateY(-1px);
         }
-
-        /* BOTÃO DO MENU RESPONSIVO */
         .menu-toggle {
             position: fixed;
             top: 20px;
@@ -169,23 +142,19 @@ $ultimosProdutos = $stmt->fetchAll();
             border-radius: 8px;
             cursor: pointer;
             font-size: 1.2rem;
-            display: none; /* Oculto no desktop */
+            display: none; 
             box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
             transition: var(--transition);
         }
-
         .menu-toggle:hover {
             background: var(--primary-hover);
         }
-
-        /* CARTÕES DE MÉTRICAS (CARDS) */
         .cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 24px;
             margin-bottom: 32px;
         }
-
         .card {
             background: var(--white);
             padding: 24px;
@@ -197,7 +166,6 @@ $ultimosProdutos = $stmt->fetchAll();
             position: relative;
             overflow: hidden;
         }
-
         .card-info h3 {
             color: var(--text-muted);
             font-size: 0.9rem;
@@ -205,49 +173,39 @@ $ultimosProdutos = $stmt->fetchAll();
             letter-spacing: 0.5px;
             margin-bottom: 8px;
         }
-
         .card-info p {
             font-size: 2rem;
             font-weight: 700;
             color: var(--text-color);
         }
-
         .card-icon {
             font-size: 2.2rem;
             opacity: 0.2;
             color: var(--dark-color);
         }
-
-        /* Cores temáticas nos ícones dos cards */
         .card:nth-child(1) .card-icon { color: #3b82f6; opacity: 0.8; }
         .card:nth-child(2) .card-icon { color: #f59e0b; opacity: 0.8; }
         .card:nth-child(3) .card-icon { color: #10b981; opacity: 0.8; }
-
-        /* TABELA DE DADOS */
         .table-container {
             background: var(--white);
             padding: 28px;
             border-radius: 12px;
             box-shadow: var(--shadow);
         }
-
         .table-container h2 {
             font-size: 1.2rem;
             color: var(--text-color);
             margin-bottom: 20px;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
         }
-
         table th, table td {
             padding: 14px 16px;
             text-align: left;
             font-size: 0.95rem;
         }
-
         table th {
             background: #f1f5f9;
             color: var(--text-muted);
@@ -256,21 +214,16 @@ $ultimosProdutos = $stmt->fetchAll();
             font-size: 0.8rem;
             letter-spacing: 0.5px;
         }
-
         table tr {
             border-bottom: 1px solid #e2e8f0;
             transition: var(--transition);
         }
-
         table tbody tr:hover {
             background: #f8fafc;
         }
-
         table tr:last-child {
             border-bottom: none;
         }
-
-        /* BADGES DE STATUS */
         .status {
             padding: 6px 12px;
             border-radius: 50px;
@@ -280,12 +233,9 @@ $ultimosProdutos = $stmt->fetchAll();
             text-transform: uppercase;
             display: inline-block;
         }
-
         .disponivel { background-color: #10b981; }
         .baixo { background-color: #f59e0b; }
         .zerado { background-color: #ef4444; }
-
-        /* RESPONSIVIDADE */
         @media (max-width: 992px) {
             .sidebar {
                 left: -260px;
@@ -305,8 +255,6 @@ $ultimosProdutos = $stmt->fetchAll();
                 margin-bottom: 24px;
             }
         }
-        
-        /* MODO ESCURO GLOBAL */
         body.dark-mode { background: #0f172a; color: #f1f5f9; }
         body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .form-container, body.dark-mode .report-card, body.dark-mode .chart-box, body.dark-mode .activity-box { background: #1e293b; box-shadow: none; color: #f1f5f9; }
         body.dark-mode .topbar h1, body.dark-mode .form-container h2, body.dark-mode .table-container h2 { color: #f1f5f9; }
@@ -316,7 +264,6 @@ $ultimosProdutos = $stmt->fetchAll();
         body.dark-mode table td, body.dark-mode tr { border-bottom: 1px solid #334155 !important; color: #cbd5e1; }
         body.dark-mode .activity-item { border-bottom: 1px solid #334155; }
         body.dark-mode .activity-item p { color: #94a3b8; }
-        
         body.dark-mode .auth-card { background: #1e293b; box-shadow: none; }
         body.dark-mode header { background: #0f172a; border-bottom: 1px solid #334155; }
         body.dark-mode .tabs { background: #1e293b; border-bottom: 1px solid #334155; }
@@ -348,11 +295,9 @@ $ultimosProdutos = $stmt->fetchAll();
             <?php unset($_SESSION['msg_erro']); ?>
         <?php endif; ?>
     </div>
-
     <button class="menu-toggle" onclick="toggleMenu()" aria-label="Abrir menu">
         <i class="fa fa-bars"></i>
     </button>
-
     <aside class="sidebar" id="sidebar">
         <div class="logo">
             <h2>ALMOX</h2>
@@ -371,13 +316,11 @@ $ultimosProdutos = $stmt->fetchAll();
             <?php endif; ?>
         </ul>
     </aside>
-
     <main class="main">
         <header class="topbar">
             <h1>Olá, <?= htmlspecialchars($_SESSION['usuario_nome']) ?> <?= (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin') ? '<span style="font-size: 14px; background: #2563eb; color: white; padding: 4px 8px; border-radius: 4px; vertical-align: middle;">ADMIN</span>' : '' ?> 👋</h1>
             <a href="logout.php" class="btn-logout"><i class="fa fa-sign-out-alt"></i> Sair</a>
         </header>
-
         <section class="cards">
             <div class="card">
                 <div class="card-info">
@@ -386,7 +329,6 @@ $ultimosProdutos = $stmt->fetchAll();
                 </div>
                 <i class="fa fa-box card-icon"></i>
             </div>
-
             <div class="card">
                 <div class="card-info">
                     <h3>Atenção / Crítico</h3>
@@ -394,7 +336,6 @@ $ultimosProdutos = $stmt->fetchAll();
                 </div>
                 <i class="fa fa-exclamation-triangle card-icon"></i>
             </div>
-
             <div class="card">
                 <div class="card-info">
                     <h3>Total Itens Estocados</h3>
@@ -403,7 +344,6 @@ $ultimosProdutos = $stmt->fetchAll();
                 <i class="fa fa-boxes-stacked card-icon"></i>
             </div>
         </section>
-
         <section class="table-container">
             <h2>Últimos Produtos Cadastrados</h2>
             <table>
@@ -433,7 +373,6 @@ $ultimosProdutos = $stmt->fetchAll();
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                    
                     <?php if (empty($ultimosProdutos)): ?>
                         <tr>
                             <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
@@ -446,12 +385,10 @@ $ultimosProdutos = $stmt->fetchAll();
             </table>
         </section>
     </main>
-
     <script>
     function toggleMenu(){
         document.getElementById("sidebar").classList.toggle("active");
     }
-
     window.addEventListener('DOMContentLoaded', () => {
         if (localStorage.getItem("darkMode") === "true") {
             document.body.classList.add("dark-mode");

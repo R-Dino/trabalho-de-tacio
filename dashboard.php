@@ -1,12 +1,10 @@
 <?php
 session_start();
 require 'db.php';
-
 if (!isset($_SESSION['usuario_id'])) {
     header("Location: index.php");
     exit;
 }
-
 $stats = $pdo->query("
     SELECT 
         COUNT(*) as total_produtos,
@@ -14,34 +12,28 @@ $stats = $pdo->query("
         SUM(CASE WHEN status IN ('Baixo', 'Zerado') THEN 1 ELSE 0 END) as baixo_estoque
     FROM produtos
 ")->fetch();
-
 $totalProdutos = $stats['total_produtos'] ?? 0;
 $totalEstoque = $stats['total_estoque'] ?? 0;
 $baixoEstoque = $stats['baixo_estoque'] ?? 0;
 $totalFornecedores = $pdo->query("SELECT COUNT(*) FROM fornecedores")->fetchColumn() ?: 0;
-
 $movimentacoes = $pdo->query("
     SELECT m.*, p.nome as produto_nome 
     FROM movimentacoes m 
     JOIN produtos p ON m.produto_id = p.id 
     ORDER BY m.data_movimentacao DESC LIMIT 4
 ")->fetchAll();
-
 $ultimosProdutos = $pdo->query("
     SELECT p.*, c.nome as categoria_nome 
     FROM produtos p 
     LEFT JOIN categorias c ON p.categoria_id = c.id 
     ORDER BY p.id DESC LIMIT 4
 ")->fetchAll();
-
-// Dados para o Gráfico (Estoque por Categoria)
 $categoriasEstoque = $pdo->query("
     SELECT c.nome, SUM(p.quantidade) as total 
     FROM produtos p 
     JOIN categorias c ON p.categoria_id = c.id 
     GROUP BY c.id
 ")->fetchAll();
-
 $catNomes = [];
 $catTotais = [];
 foreach($categoriasEstoque as $cat) {
@@ -54,15 +46,11 @@ foreach($categoriasEstoque as $cat) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Dashboard Almoxarifado</title>
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
 <style>
 *{ margin:0; padding:0; box-sizing:border-box; font-family:Arial, Helvetica, sans-serif; }
 body{ background:#f1f5f9; }
-
 .menu-toggle{ position:fixed; top:15px; left:15px; z-index:1000; border:none; background:#2563eb; color:white; width:45px; height:45px; border-radius:8px; cursor:pointer; font-size:20px; }
 .sidebar{ width:250px; height:100vh; background:#0f172a; color:white; padding:20px; position:fixed; left:-250px; top:0; transition:0.4s; z-index:999; }
 .sidebar.active{ left:0; }
@@ -72,20 +60,16 @@ body{ background:#f1f5f9; }
 .menu li{ margin:15px 0; }
 .menu a{ color:white; text-decoration:none; display:flex; align-items:center; gap:10px; padding:12px; border-radius:8px; transition:0.3s; }
 .menu a:hover{ background:#1e293b; }
-
 .main{ width:100%; padding:20px; }
-
 .topbar{ background:white; padding:15px 20px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:60px; }
 .usuario{ display:flex; align-items:center; gap:10px; }
 .usuario img{ width:45px; height:45px; border-radius:50%; }
-
 .cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; margin-top:25px; }
 .card{ background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:0.3s; }
 .card:hover{ transform:translateY(-5px); }
 .card i{ font-size:35px; color:#2563eb; margin-bottom:15px; }
 .card h3{ color:#64748b; }
 .card p{ margin-top:10px; font-size:28px; font-weight:bold; }
-
 .dashboard-grid{ margin-top:30px; display:grid; grid-template-columns:2fr 1fr; gap:20px; }
 .chart-box, .activity-box{ background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
 .chart{ margin-top:20px; }
@@ -97,13 +81,11 @@ body{ background:#f1f5f9; }
 .verde{ width:65%; background:green; }
 .vermelho{ width:35%; background:red; }
 .amarelo{ width:50%; background:orange; }
-
 .activity{ margin-top:20px; }
 .activity-item{ padding:15px; border-bottom:1px solid #ddd; }
 .activity-item:last-child{ border:none; }
 .activity-item h4{ margin-bottom:5px; }
 .activity-item p{ color:#64748b; font-size:14px; }
-
 .table-container{ margin-top:30px; background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
 table{ width:100%; border-collapse:collapse; margin-top:20px; }
 table th, table td{ padding:12px; border-bottom:1px solid #ddd; text-align:left; }
@@ -112,11 +94,9 @@ table th{ background:#e2e8f0; }
 .disponivel{ background:green; }
 .baixo{ background:orange; }
 .zerado{ background:red; }
-
 @media(max-width: 768px) {
     .dashboard-grid{ grid-template-columns: 1fr; }
 }
-
         body.dark-mode { background: #0f172a; color: #f1f5f9; }
         body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .form-container, body.dark-mode .report-card, body.dark-mode .chart-box, body.dark-mode .activity-box { background: #1e293b; box-shadow: none; color: #f1f5f9; }
         body.dark-mode .topbar h1, body.dark-mode .form-container h2, body.dark-mode .table-container h2 { color: #f1f5f9; }
@@ -126,7 +106,6 @@ table th{ background:#e2e8f0; }
         body.dark-mode table td, body.dark-mode tr { border-bottom: 1px solid #334155 !important; color: #cbd5e1; }
         body.dark-mode .activity-item { border-bottom: 1px solid #334155; }
         body.dark-mode .activity-item p { color: #94a3b8; }
-        
         body.dark-mode .auth-card { background: #1e293b; box-shadow: none; }
         body.dark-mode header { background: #0f172a; border-bottom: 1px solid #334155; }
         body.dark-mode .tabs { background: #1e293b; border-bottom: 1px solid #334155; }
@@ -158,9 +137,7 @@ table th{ background:#e2e8f0; }
         <?php unset($_SESSION['msg_erro']); ?>
     <?php endif; ?>
 </div>
-
 <button class="menu-toggle" onclick="toggleMenu()"><i class="fa fa-bars"></i></button>
-
 <div class="sidebar" id="sidebar">
     <div class="logo"><h2>ALMOX</h2></div>
     <ul class="menu">
@@ -177,7 +154,6 @@ table th{ background:#e2e8f0; }
         <?php endif; ?>
     </ul>
 </div>
-
 <div class="main">
     <div class="topbar">
         <h1>Dashboard</h1>
@@ -189,14 +165,12 @@ table th{ background:#e2e8f0; }
             </div>
         </div>
     </div>
-
     <div class="cards">
         <div class="card"><i class="fa fa-box"></i><h3>Total de Produtos</h3><p><?= $totalProdutos ?></p></div>
         <div class="card"><i class="fa fa-warehouse"></i><h3>Itens em Estoque</h3><p><?= $totalEstoque ?></p></div>
         <div class="card"><i class="fa fa-triangle-exclamation"></i><h3>Baixo Estoque</h3><p><?= $baixoEstoque ?></p></div>
         <div class="card"><i class="fa fa-truck"></i><h3>Fornecedores</h3><p><?= $totalFornecedores ?></p></div>
     </div>
-
     <div class="dashboard-grid">
         <div class="chart-box">
             <h2>Estoque por Categoria (Gráfico)</h2>
@@ -204,7 +178,6 @@ table th{ background:#e2e8f0; }
                 <canvas id="graficoEstoque"></canvas>
             </div>
         </div>
-
         <div class="activity-box">
             <h2>Atividades Recentes</h2>
             <div class="activity">
@@ -220,7 +193,6 @@ table th{ background:#e2e8f0; }
             </div>
         </div>
     </div>
-
     <div class="table-container">
         <h2>Últimos Produtos</h2>
         <table>
@@ -249,20 +221,16 @@ table th{ background:#e2e8f0; }
         </table>
     </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function toggleMenu(){
     let sidebar = document.getElementById("sidebar");
     sidebar.classList.toggle("active");
 }
-
 window.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem("darkMode") === "true") {
         document.body.classList.add("dark-mode");
     }
-
-    // Inicializar Gráfico
     const ctx = document.getElementById('graficoEstoque');
     if (ctx) {
         new Chart(ctx, {

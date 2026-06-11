@@ -1,18 +1,13 @@
 <?php
 session_start();
 require 'db.php';
-
 if (!isset($_SESSION['usuario_id'])) {
     header("Location: index.php");
     exit;
 }
-
-// Proteção para Admin
 if (!isset($_SESSION['nivel_acesso']) || $_SESSION['nivel_acesso'] !== 'admin') {
     die("Acesso negado. Apenas administradores podem gerenciar usuários.");
 }
-
-// 1. Adicionar Novo Usuário
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'adicionar_usuario') {
     $nome = $_POST['nome'];
     $email = $_POST['email'];
@@ -22,7 +17,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     $genero = $_POST['genero'] ?? null;
     $sexo = $_POST['sexo'] ?? null;
     $cidade = $_POST['cidade'] ?? null;
-
     $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
@@ -35,8 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     header("Location: usuarios.php");
     exit;
 }
-
-// 2. Editar Usuário (inclui alterar ID)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'editar_usuario') {
     $id_atual = (int)$_POST['id_atual'];
     $novo_id = !empty($_POST['novo_id']) ? (int)$_POST['novo_id'] : $id_atual;
@@ -46,7 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     $genero = $_POST['genero'] ?? null;
     $sexo = $_POST['sexo'] ?? null;
     $cidade = $_POST['cidade'] ?? null;
-
     try {
         if ($novo_id !== $id_atual) {
             $check = $pdo->prepare("SELECT id FROM usuarios WHERE id = ?");
@@ -55,12 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
                 throw new Exception("O ID $novo_id já está em uso por outro usuário.");
             }
         }
-        
         $stmt = $pdo->prepare("UPDATE usuarios SET id = ?, nome = ?, email = ?, idade = ?, genero = ?, sexo = ?, cidade = ? WHERE id = ?");
         $stmt->execute([$novo_id, $nome, $email, $idade, $genero, $sexo, $cidade, $id_atual]);
         $_SESSION['msg_sucesso'] = "Dados do usuário atualizados com sucesso!";
-        
-        // Atualizar sessão se editou a si mesmo
         if ($id_atual === $_SESSION['usuario_id']) {
             $_SESSION['usuario_id'] = $novo_id;
             $_SESSION['usuario_nome'] = $nome;
@@ -71,18 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
     header("Location: usuarios.php");
     exit;
 }
-
-// Lidar com a exclusão de usuário
 if (isset($_GET['excluir_usuario'])) {
     $id_excluir = (int)$_GET['excluir_usuario'];
     if ($id_excluir !== $_SESSION['usuario_id']) { 
         $usr_nome = $pdo->query("SELECT nome FROM usuarios WHERE id = $id_excluir")->fetchColumn();
         $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id = ?");
         $stmt->execute([$id_excluir]);
-        
         $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, ?, ?)")
             ->execute([$_SESSION['usuario_id'], 'Excluir Usuário', "Excluiu o usuário ID $id_excluir (" . ($usr_nome ?: 'Desconhecido') . ")"]);
-
         $_SESSION['msg_sucesso'] = "Usuário excluído com sucesso!";
     } else {
         $_SESSION['msg_erro'] = "Ação negada.";
@@ -90,50 +74,37 @@ if (isset($_GET['excluir_usuario'])) {
     header("Location: usuarios.php");
     exit;
 }
-
-// Lidar com banimento/desbanimento de usuário
 if (isset($_GET['banir_usuario'])) {
     $id_banir = (int)$_GET['banir_usuario'];
     $status_atual = $_GET['status'] ?? 'ativo';
     $novo_status = $status_atual === 'banido' ? 'ativo' : 'banido';
-    
     if ($id_banir !== $_SESSION['usuario_id']) { 
         $usr_nome = $pdo->query("SELECT nome FROM usuarios WHERE id = $id_banir")->fetchColumn();
         $stmt = $pdo->prepare("UPDATE usuarios SET status = ? WHERE id = ?");
         $stmt->execute([$novo_status, $id_banir]);
-        
         $acao = $novo_status === 'banido' ? 'Banir Usuário' : 'Desbanir Usuário';
         $detalhes = $novo_status === 'banido' ? "Baniu o usuário ID $id_banir (" . ($usr_nome ?: 'Desconhecido') . ")" : "Desbaniu o usuário ID $id_banir (" . ($usr_nome ?: 'Desconhecido') . ")";
-        
         $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, ?, ?)")
             ->execute([$_SESSION['usuario_id'], $acao, $detalhes]);
-
         $_SESSION['msg_sucesso'] = "Status de banimento atualizado!";
     }
     header("Location: usuarios.php");
     exit;
 }
-
-// Lidar com a mudança de nível
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'mudar_nivel') {
     $id_usuario = (int)$_POST['usuario_id'];
     $novo_nivel = $_POST['nivel_acesso']; 
-    
     if ($id_usuario !== $_SESSION['usuario_id'] && in_array($novo_nivel, ['admin', 'comum'])) {
         $usr_nome = $pdo->query("SELECT nome FROM usuarios WHERE id = $id_usuario")->fetchColumn();
         $stmt = $pdo->prepare("UPDATE usuarios SET nivel_acesso = ? WHERE id = ?");
         $stmt->execute([$novo_nivel, $id_usuario]);
-        
         $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, ?, ?)")
             ->execute([$_SESSION['usuario_id'], 'Mudar Nível', "Alterou nível do ID $id_usuario (" . ($usr_nome ?: 'Desconhecido') . ") para $novo_nivel"]);
-
         $_SESSION['msg_sucesso'] = "Nível de acesso alterado com sucesso!";
     }
     header("Location: usuarios.php");
     exit;
 }
-
-// Lidar com a redefinição de senha
 if (isset($_GET['redefinir_senha'])) {
     $id_redefinir = (int)$_GET['redefinir_senha'];
     if ($id_redefinir !== $_SESSION['usuario_id']) {
@@ -141,41 +112,30 @@ if (isset($_GET['redefinir_senha'])) {
         $senha_padrao = password_hash('123456', PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("UPDATE usuarios SET senha = ? WHERE id = ?");
         $stmt->execute([$senha_padrao, $id_redefinir]);
-        
         $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, ?, ?)")
             ->execute([$_SESSION['usuario_id'], 'Redefinir Senha', "Redefiniu a senha do ID $id_redefinir (" . ($usr_nome ?: 'Desconhecido') . ") para '123456'"]);
-
         $_SESSION['msg_sucesso'] = "Senha redefinida para '123456' com sucesso!";
     }
     header("Location: usuarios.php");
     exit;
 }
-
-// Obter usuários (com filtro de pesquisa e status)
 $busca = $_GET['busca'] ?? '';
 $filtro_status = $_GET['status_filtro'] ?? '';
-
 $sql = "SELECT id, nome, email, nivel_acesso, status, criado_em, idade, genero, sexo, cidade FROM usuarios WHERE 1=1";
 $params = [];
-
 if (!empty($busca)) {
     $sql .= " AND (id = ? OR nome LIKE ?)";
     $params[] = $busca;
     $params[] = "%$busca%";
 }
-
 if (!empty($filtro_status) && in_array($filtro_status, ['ativo', 'banido'])) {
     $sql .= " AND status = ?";
     $params[] = $filtro_status;
 }
-
 $sql .= " ORDER BY id ASC";
-
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $usuarios = $stmt->fetchAll();
-
-// Estatísticas
 $totalUsuarios = count($usuarios);
 $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + ($usr['nivel_acesso'] === 'admin' ? 1 : 0); }, 0);
 ?>
@@ -188,11 +148,8 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="premium.css">
     <style>
-        /* BASE & RESET */
         *{ margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', sans-serif; }
         body{ background:#f1f5f9; color: #1e293b; transition: background 0.3s; }
-
-        /* MENU LATERAL */
         .menu-toggle{ position:fixed; top:15px; left:15px; z-index:1000; border:none; background:#2563eb; color:white; width:45px; height:45px; border-radius:8px; cursor:pointer; font-size:20px; }
         .sidebar{ width:250px; height:100vh; background:#0f172a; color:white; padding:20px; position:fixed; left:-250px; top:0; transition:0.4s; z-index:999; }
         .sidebar.active{ left:0; }
@@ -202,24 +159,16 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
         .menu li{ margin:15px 0; }
         .menu a{ color:white; text-decoration:none; display:flex; align-items:center; gap:10px; padding:12px; border-radius:8px; transition:0.3s; }
         .menu a:hover{ background:#1e293b; }
-
-        /* CONTEÚDO PRINCIPAL */
         .main{ width:100%; padding:20px; transition: 0.4s; }
         .topbar{ background:white; padding:15px 20px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:60px; }
-        
-        /* CARDS */
         .cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; margin-top:25px; }
         .card{ background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
         .card h3{ color:#64748b; }
         .card p{ margin-top:10px; font-size:28px; font-weight:bold; color: #2563eb;}
-
-        /* TABELA */
         .table-container{ margin-top:30px; background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow-x:auto;}
         table{ width:100%; border-collapse:collapse; margin-top:20px; min-width:600px;}
         table th, table td{ padding:12px; border-bottom:1px solid #f1f5f9; text-align:left; }
         table th{ background:#e2e8f0; border-radius: 4px; }
-
-        /* MODAL */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px);
@@ -241,10 +190,7 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #475569; font-size: 14px; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; background: #f8fafc; }
         .form-group input:focus, .form-group select:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
-        
         .btn-add { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; margin-left:15px; }
-
-        /* MODO ESCURO GLOBAL */
         body.dark-mode { background: #0f172a; color: #f1f5f9; }
         body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .modal-content { background: #1e293b; box-shadow: none; color: #f1f5f9; border: 1px solid rgba(255,255,255,0.05); }
         body.dark-mode .topbar h1, body.dark-mode .table-container h2, body.dark-mode .modal-header h2 { color: #f1f5f9; }
@@ -273,11 +219,9 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
         <?php unset($_SESSION['msg_erro']); ?>
     <?php endif; ?>
 </div>
-
     <button class="menu-toggle" onclick="toggleMenu()">
         <i class="fa fa-bars"></i>
     </button>
-
     <div class="sidebar" id="sidebar">
         <div class="logo"><h2>ALMOX</h2></div>
         <ul class="menu">
@@ -294,13 +238,11 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
             <?php endif; ?>
         </ul>
     </div>
-
     <div class="main">
         <div class="topbar">
             <h1>Gestão de Usuários e Privilégios</h1>
             <button class="btn btn-add" onclick="abrirModalAdd()"><i class="fa fa-user-plus"></i> Novo Usuário</button>
         </div>
-
         <div class="cards">
             <div class="card">
                 <h3>Total de Usuários</h3>
@@ -311,7 +253,6 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
                 <p><?= $totalAdmins ?></p>
             </div>
         </div>
-
         <div class="table-container">
             <h2>Lista de Usuários</h2>
             <form method="GET" action="usuarios.php" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
@@ -326,13 +267,11 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
                     <a href="usuarios.php" style="padding: 10px 15px; background: #94a3b8; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; display: flex; align-items: center;">Limpar</a>
                 <?php endif; ?>
             </form>
-            
             <div style="margin-bottom: 15px; background: #e0f2fe; color: #0284c7; padding: 12px; border-radius: 8px; font-size: 0.9rem; font-weight: 500;">
                 <i class="fa fa-info-circle"></i> <strong>Categorias de Liberdade:</strong> <br>
                 - <strong>Usuário Comum:</strong> Pode visualizar produtos, estoque e fornecedores. <br>
                 - <strong>Administrador:</strong> Acesso total. Pode gerenciar produtos, aprovar estoque, banir e promover usuários.
             </div>
-
             <table>
                 <thead>
                     <tr>
@@ -400,8 +339,6 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
             </table>
         </div>
     </div>
-
-    <!-- MODAL ADICIONAR USUÁRIO -->
     <div class="modal-overlay" id="modalAdd">
         <div class="modal-content">
             <div class="modal-header">
@@ -463,8 +400,6 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
             </form>
         </div>
     </div>
-
-    <!-- MODAL EDITAR USUÁRIO -->
     <div class="modal-overlay" id="modalEdit">
         <div class="modal-content">
             <div class="modal-header">
@@ -523,22 +458,18 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
             </form>
         </div>
     </div>
-
     <script>
         function toggleMenu(){
             document.getElementById("sidebar").classList.toggle("active");
         }
-    
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem("darkMode") === "true") {
                 document.body.classList.add("dark-mode");
             }
         });
-
         function abrirModalAdd() {
             document.getElementById('modalAdd').classList.add('active');
         }
-
         function abrirModalEdit(user) {
             document.getElementById('edit_id_atual').value = user.id;
             document.getElementById('edit_novo_id').value = user.id;
@@ -548,10 +479,8 @@ $totalAdmins = array_reduce($usuarios, function($carry, $usr) { return $carry + 
             document.getElementById('edit_genero').value = user.genero || '';
             document.getElementById('edit_sexo').value = user.sexo || '';
             document.getElementById('edit_cidade').value = user.cidade || '';
-            
             document.getElementById('modalEdit').classList.add('active');
         }
-
         function fecharModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }

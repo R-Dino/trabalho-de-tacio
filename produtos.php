@@ -1,13 +1,10 @@
 <?php
 session_start();
 require 'db.php';
-
 if (!isset($_SESSION['usuario_id'])) {
     header("Location: index.php");
     exit;
 }
-
-// Lidar com a exclusão de produto
 if (isset($_GET['excluir'])) {
     if (!isset($_SESSION['nivel_acesso']) || $_SESSION['nivel_acesso'] !== 'admin') {
         die("Acesso negado. Apenas administradores podem excluir.");
@@ -18,14 +15,11 @@ if (isset($_GET['excluir'])) {
     header("Location: produtos.php");
     exit;
 }
-
-// Lidar com a adição de produto
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'adicionar') {
     $nome = trim($_POST['nome']);
     $quantidade = (int)$_POST['quantidade'];
     $preco = (float)$_POST['preco'];
     $categoria_id = (int)$_POST['categoria_id'];
-
     if (!empty($nome) && $categoria_id > 0) {
         $status = 'Disponível';
         if ($quantidade == 0) {
@@ -33,18 +27,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['ac
         } elseif ($quantidade <= 20) {
             $status = 'Baixo';
         }
-
         $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco, categoria_id, status) VALUES (?, ?, ?, ?, ?)");
         $stmt->execute([$nome, $quantidade, $preco, $categoria_id, $status]);
         header("Location: produtos.php");
         exit;
     }
 }
-
-// Obter categorias para o formulário
 $categorias = $pdo->query("SELECT * FROM categorias ORDER BY nome ASC")->fetchAll();
-
-// Obter produtos para a tabela
 $termo_pesquisa = $_GET['pesquisa'] ?? '';
 if (!empty($termo_pesquisa)) {
     $stmt = $pdo->prepare("SELECT p.*, c.nome as categoria_nome FROM produtos p LEFT JOIN categorias c ON p.categoria_id = c.id WHERE p.nome LIKE ? ORDER BY p.id DESC");
@@ -59,16 +48,11 @@ if (!empty($termo_pesquisa)) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Página de Produtos</title>
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
 <style>
 *{ margin:0; padding:0; box-sizing:border-box; font-family:Arial, Helvetica, sans-serif; }
 body{ background:#f1f5f9; }
-
-/* MENU */
 .menu-toggle{ position:fixed; top:15px; left:15px; z-index:1000; border:none; background:#2563eb; color:white; width:45px; height:45px; border-radius:8px; cursor:pointer; font-size:20px; }
 .sidebar{ width:250px; height:100vh; background:#0f172a; color:white; padding:20px; position:fixed; left:-250px; top:0; transition:0.4s; z-index:999; }
 .sidebar.active{ left:0; }
@@ -78,41 +62,26 @@ body{ background:#f1f5f9; }
 .menu li{ margin:15px 0; }
 .menu a{ color:white; text-decoration:none; display:flex; align-items:center; gap:10px; padding:12px; border-radius:8px; transition:0.3s; }
 .menu a:hover{ background:#1e293b; }
-
-/* MAIN */
 .main{ width:100%; padding:20px; }
-
-/* TOPO */
 .topbar{ background:white; padding:15px 20px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-top:60px; }
 .topbar form { display: flex; gap: 10px; }
 .topbar input{ width:300px; padding:10px; border:1px solid #ccc; border-radius:8px; }
-
-/* FORMULÁRIO */
 .form-container{ margin-top:30px; background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
 .form-container h2{ margin-bottom:20px; }
 .form-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; }
 .form-grid input, .form-grid select{ padding:12px; border:1px solid #ccc; border-radius:8px; }
-
 button.btn-primary{ margin-top:20px; padding:12px 20px; border:none; border-radius:8px; background:#2563eb; color:white; cursor:pointer; font-weight:bold; transition:0.3s; }
 button.btn-primary:hover{ background:#1d4ed8; }
-
-/* TABELA */
 .table-container{ margin-top:30px; background:white; padding:20px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; }
 table{ width:100%; border-collapse:collapse; margin-top:20px; }
 table th, table td{ padding:12px; border-bottom:1px solid #ddd; text-align:left; }
 table th{ background:#e2e8f0; }
-
-/* STATUS */
 .status{ padding:5px 10px; border-radius:20px; color:white; font-size:12px; }
 .disponivel{ background:green; }
 .baixo{ background:orange; }
 .zerado{ background:red; }
-
-/* AÇÕES */
 .acoes a.btn-delete { padding:8px 12px; background:red; color:white; text-decoration:none; border-radius:8px; font-size:14px; }
 .acoes a.btn-delete:hover{ background:darkred; }
-
-        /* MODO ESCURO GLOBAL */
         body.dark-mode { background: #0f172a; color: #f1f5f9; }
         body.dark-mode .topbar, body.dark-mode .card, body.dark-mode .table-container, body.dark-mode .form-container, body.dark-mode .report-card, body.dark-mode .chart-box, body.dark-mode .activity-box { background: #1e293b; box-shadow: none; color: #f1f5f9; }
         body.dark-mode .topbar h1, body.dark-mode .form-container h2, body.dark-mode .table-container h2 { color: #f1f5f9; }
@@ -122,8 +91,6 @@ table th{ background:#e2e8f0; }
         body.dark-mode table td, body.dark-mode tr { border-bottom: 1px solid #334155 !important; color: #cbd5e1; }
         body.dark-mode .activity-item { border-bottom: 1px solid #334155; }
         body.dark-mode .activity-item p { color: #94a3b8; }
-        
-        /* Ajustes extras para Tela de Login */
         body.dark-mode .auth-card { background: #1e293b; box-shadow: none; }
         body.dark-mode header { background: #0f172a; border-bottom: 1px solid #334155; }
         body.dark-mode .tabs { background: #1e293b; border-bottom: 1px solid #334155; }
@@ -155,9 +122,7 @@ table th{ background:#e2e8f0; }
         <?php unset($_SESSION['msg_erro']); ?>
     <?php endif; ?>
 </div>
-
 <button class="menu-toggle" onclick="toggleMenu()"><i class="fa fa-bars"></i></button>
-
 <div class="sidebar" id="sidebar">
     <div class="logo"><h2>ALMOX</h2></div>
     <ul class="menu">
@@ -174,9 +139,7 @@ table th{ background:#e2e8f0; }
         <?php endif; ?>
     </ul>
 </div>
-
 <div class="main">
-    
     <div class="topbar">
         <h1>Produtos</h1>
         <form method="GET" action="produtos.php">
@@ -184,8 +147,6 @@ table th{ background:#e2e8f0; }
             <button type="submit" class="btn-primary" style="margin-top:0;">Buscar</button>
         </form>
     </div>
-
-    <!-- FORMULÁRIO -->
     <div class="form-container">
         <h2>Cadastrar Produto</h2>
         <form method="POST" action="produtos.php">
@@ -204,8 +165,6 @@ table th{ background:#e2e8f0; }
             <button type="submit" class="btn-primary">Adicionar Produto</button>
         </form>
     </div>
-
-    <!-- TABELA -->
     <div class="table-container">
         <h2>Lista de Produtos</h2>
         <table>
@@ -250,9 +209,7 @@ table th{ background:#e2e8f0; }
             </tbody>
         </table>
     </div>
-
 </div>
-
 <script>
 function editarProduto(id, nome, quantidade, preco, categoria_id) {
     document.querySelector('input[name="acao"]').value = 'editar';
@@ -276,13 +233,11 @@ function toggleMenu(){
     let sidebar = document.getElementById("sidebar");
     sidebar.classList.toggle("active");
 }
-
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem("darkMode") === "true") {
                 document.body.classList.add("dark-mode");
             }
         });
 </script>
-
 </body>
 </html>

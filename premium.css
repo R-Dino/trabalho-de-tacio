@@ -1,23 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-/* Premium Aesthetics Optmization */
 body {
     font-family: 'Inter', sans-serif;
 }
-
 button,
 input,
 select,
 textarea {
     font-family: inherit;
 }
-
 body {
     background: #f8fafc;
     transition: background 0.4s ease;
 }
-
-/* Glassmorphism & Modern Shadows */
 .card,
 .chart-box,
 .activity-box,
@@ -33,33 +27,25 @@ body {
     border-radius: 16px !important;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
-
 .card:hover,
 .report-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(149, 157, 165, 0.2) !important;
     border-color: rgba(59, 130, 246, 0.3);
 }
-
-/* Gradients for Sidebar */
 .sidebar {
     background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%) !important;
     box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
     border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 .sidebar .menu a {
     position: relative;
     overflow: hidden;
 }
-
 .sidebar .menu a:hover {
     background: rgba(255, 255, 255, 0.1) !important;
     padding-left: 20px;
-    /* Slight indent on hover */
 }
-
-/* Dynamic Topbar */
 .topbar {
     background: rgba(255, 255, 255, 0.75) !important;
     backdrop-filter: blur(15px);
@@ -68,8 +54,6 @@ body {
     border-radius: 12px !important;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
 }
-
-/* Premium Buttons */
 button,
 .btn-export,
 .btn,
@@ -83,7 +67,6 @@ input[type="submit"] {
     transition: all 0.3s ease !important;
     color: white !important;
 }
-
 button:hover,
 .btn-export:hover,
 .btn:hover,
@@ -92,20 +75,15 @@ input[type="submit"]:hover {
     transform: translateY(-2px);
     filter: brightness(1.1);
 }
-
-/* Danger Button Variation */
 button[style*="#ef4444"],
 .btn-danger {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25) !important;
 }
-
 button[style*="#ef4444"]:hover,
 .btn-danger:hover {
     box-shadow: 0 6px 18px rgba(239, 68, 68, 0.4) !important;
 }
-
-/* Smooth Tables */
 table th {
     background: rgba(241, 245, 249, 0.6) !important;
     backdrop-filter: blur(5px);
@@ -115,20 +93,15 @@ table th {
     letter-spacing: 0.5px;
     color: #475569;
 }
-
 table tr {
     transition: background 0.2s ease;
 }
-
 table tr:hover td {
     background: rgba(241, 245, 249, 0.4);
 }
-
-/* ------------- DARK MODE ENHANCEMENTS ------------- */
 body.dark-mode {
     background: #0b1120;
 }
-
 body.dark-mode .card,
 body.dark-mode .chart-box,
 body.dark-mode .activity-box,
@@ -141,62 +114,49 @@ body.dark-mode .auth-card {
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
 }
-
 body.dark-mode .card:hover,
 body.dark-mode .report-card:hover {
     border-color: rgba(56, 189, 248, 0.4);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5) !important;
 }
-
 body.dark-mode table th {
     background: rgba(15, 23, 42, 0.6) !important;
     color: #94a3b8 !important;
 }
-
 body.dark-mode table tr:hover td {
     background: rgba(15, 23, 42, 0.4);
 }
-
 body.dark-mode input,
 body.dark-mode select {
     background: rgba(15, 23, 42, 0.5) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
-
 body.dark-mode input:focus,
 body.dark-mode select:focus {
     border-color: #38bdf8 !important;
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
 }
-
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
-
 ::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.05);
 }
-
 ::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 10px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
-
 body.dark-mode ::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.02);
 }
-
 body.dark-mode ::-webkit-scrollbar-thumb {
     background: #334155;
 }
-
 body.dark-mode ::-webkit-scrollbar-thumb:hover {
     background: #475569;
 }
