@@ -333,6 +333,7 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
             min-height: 100vh;
             overflow-x: hidden;
             font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-left: 250px;
         }
         .sidebar {
             width: 250px;
@@ -340,6 +341,11 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
             padding: 20px;
             border-right: 1px solid rgba(255,255,255,0.05);
             z-index: 10;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
         }
         .logo { text-align: center; margin-bottom: 40px; }
         .logo h2 { color: #a8c7fa; font-weight: 800; letter-spacing: 2px; }
