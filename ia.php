@@ -504,7 +504,7 @@ if ($totalFornecedores == 0) {
             width: calc(100% - 100px);
             max-height: 350px;
             overflow-y: auto;
-            z-index: 100;
+            z-index: 9999;
             box-shadow: 0 8px 24px rgba(0,0,0,0.6);
             display: none;
             flex-direction: column;
@@ -629,7 +629,9 @@ if ($totalFornecedores == 0) {
             { cmd: '/fornecedores', desc: 'Lista de fornecedores', icon: 'fa-truck', color: '#a8c7fa' },
             { cmd: '/comprar', desc: '[produto] - Pesquisa no Mercado Livre', icon: 'fa-shopping-cart', color: '#f59e0b' },
             { cmd: '/pesquisar', desc: '[termo] - Pesquisa na Wikipedia', icon: 'fa-globe', color: '#a8c7fa' },
-            { cmd: '/limpar', desc: 'Limpa o histórico do terminal atual', icon: 'fa-eraser', color: '#94a3b8' }
+            { cmd: '/limpar', desc: 'Limpa o histórico do terminal atual', icon: 'fa-eraser', color: '#94a3b8' },
+            { cmd: '/dashboard', desc: 'Abre o Painel Principal', icon: 'fa-chart-line', color: '#10b981' },
+            { cmd: '/produtos', desc: 'Abre a página de Produtos', icon: 'fa-box', color: '#3b82f6' }
         ];
 
         const input = document.getElementById('userInput');
@@ -638,7 +640,7 @@ if ($totalFornecedores == 0) {
         const suggestionsBox = document.getElementById('commandSuggestions');
 
         input.addEventListener('input', function() {
-            const val = this.value.toLowerCase();
+            const val = this.value.trim().toLowerCase();
             if (val.startsWith('/')) {
                 const match = val.split(' ')[0]; 
                 const filtered = COMMANDS.filter(c => c.cmd.startsWith(match));
@@ -718,6 +720,16 @@ if ($totalFornecedores == 0) {
                 const msgs = chat.querySelectorAll('.message-wrapper:not(:first-child)');
                 msgs.forEach(m => m.remove());
                 return `Terminal limpo com sucesso.`;
+            }
+
+            if (pergunta === '/dashboard') {
+                window.location.href = 'dashboard.php';
+                return `Acessando o Dashboard...`;
+            }
+
+            if (pergunta === '/produtos') {
+                window.location.href = 'produtos.php';
+                return `Acessando a listagem de Produtos...`;
             }
 
             if (!pergunta.startsWith('/')) {
