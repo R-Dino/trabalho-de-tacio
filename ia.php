@@ -768,54 +768,54 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
             if (pergunta.startsWith('/comprar ')) {
                 let searchTerm = pergunta.replace('/comprar ', '').trim();
                 try {
-                    const response = await fetch(\`https://api.mercadolibre.com/sites/MLB/search?q=\${encodeURIComponent(searchTerm)}&limit=5\`);
+                    const response = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(searchTerm)}&limit=5`);
                     const data = await response.json();
                     if (data.results && data.results.length > 0) {
-                        let html = \`Pesquisa no <b>Mercado Livre</b> para <b>"\${searchTerm}"</b>:<br><br><div style="display:flex; flex-direction:column; gap:12px;">\`;
+                        let html = `Pesquisa no <b>Mercado Livre</b> para <b>"${searchTerm}"</b>:<br><br><div style="display:flex; flex-direction:column; gap:12px;">`;
                         data.results.forEach(item => {
-                            html += \`
+                            html += `
                             <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; display:flex; gap:15px; align-items:center; border: 1px solid rgba(255,255,255,0.05);">
-                                <img src="\${item.thumbnail}" style="width:60px; height:60px; object-fit:contain; background:#fff; border-radius:8px;">
+                                <img src="${item.thumbnail}" style="width:60px; height:60px; object-fit:contain; background:#fff; border-radius:8px;">
                                 <div style="flex:1;">
-                                    <strong style="font-size:0.95rem; display:block; color:#e3e3e3;">\${item.title}</strong>
-                                    <span style="color: #a8c7fa; font-weight: bold; font-size: 1.1rem;">R$ \${item.price.toFixed(2)}</span>
+                                    <strong style="font-size:0.95rem; display:block; color:#e3e3e3;">${item.title}</strong>
+                                    <span style="color: #a8c7fa; font-weight: bold; font-size: 1.1rem;">R$ ${item.price.toFixed(2)}</span>
                                 </div>
-                                <a href="\${item.permalink}" target="_blank" style="background: var(--gemini-gradient); color:white; padding:8px 15px; border-radius:20px; text-decoration:none; font-size:0.85rem; font-weight:bold; transition: 0.3s;"><i class="fa fa-shopping-cart"></i> Ver</a>
-                            </div>\`;
+                                <a href="${item.permalink}" target="_blank" style="background: var(--gemini-gradient); color:white; padding:8px 15px; border-radius:20px; text-decoration:none; font-size:0.85rem; font-weight:bold; transition: 0.3s;"><i class="fa fa-shopping-cart"></i> Ver</a>
+                            </div>`;
                         });
-                        html += \`</div>\`;
+                        html += `</div>`;
                         return html;
                     } else {
-                        return \`Nenhum produto correspondente a "\${searchTerm}" no Mercado Livre.\`;
+                        return `Nenhum produto correspondente a "${searchTerm}" no Mercado Livre.`;
                     }
                 } catch (e) {
-                    return \`Erro ao buscar produto: \${e.message}\`;
+                    return `Erro ao buscar produto: ${e.message}`;
                 }
             }
 
             if (pergunta.startsWith('/pesquisar ')) {
                 let searchTerm = pergunta.replace('/pesquisar ', '').trim();
                 try {
-                    const searchRes = await fetch(\`https://pt.wikipedia.org/w/api.php?action=query&list=search&srsearch=\${encodeURIComponent(searchTerm)}&utf8=&format=json&origin=*\`);
+                    const searchRes = await fetch(`https://pt.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchTerm)}&utf8=&format=json&origin=*`);
                     const searchData = await searchRes.json();
                     if (searchData.query && searchData.query.search && searchData.query.search.length > 0) {
                         const title = searchData.query.search[0].title;
-                        const summaryRes = await fetch(\`https://pt.wikipedia.org/api/rest_v1/page/summary/\${encodeURIComponent(title)}\`);
+                        const summaryRes = await fetch(`https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
                         const data = await summaryRes.json();
-                        let html = \`Informação global sobre <b>\${data.title}</b>:<br><br>\`;
-                        html += \`<div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border-left: 4px solid #a8c7fa;">\`;
+                        let html = `Informação global sobre <b>${data.title}</b>:<br><br>`;
+                        html += `<div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border-left: 4px solid #a8c7fa;">`;
                         if (data.thumbnail) {
-                            html += \`<img src="\${data.thumbnail.source}" style="max-width:180px; border-radius:10px; margin-bottom:15px; float:right; margin-left:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">\`;
+                            html += `<img src="${data.thumbnail.source}" style="max-width:180px; border-radius:10px; margin-bottom:15px; float:right; margin-left:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">`;
                         }
-                        html += \`<p style="color:#c4c7c5; line-height:1.7; font-size: 1rem;">\${data.extract}</p>\`;
-                        html += \`<div style="clear:both;"></div><br><a href="\${data.content_urls.desktop.page}" target="_blank" style="color:#a8c7fa; text-decoration:none; font-weight:bold; display:inline-flex; align-items:center; gap:8px;"><i class="fa fa-external-link"></i> Acessar Registro Completo</a>\`;
-                        html += \`</div>\`;
+                        html += `<p style="color:#c4c7c5; line-height:1.7; font-size: 1rem;">${data.extract}</p>`;
+                        html += `<div style="clear:both;"></div><br><a href="${data.content_urls.desktop.page}" target="_blank" style="color:#a8c7fa; text-decoration:none; font-weight:bold; display:inline-flex; align-items:center; gap:8px;"><i class="fa fa-external-link"></i> Acessar Registro Completo</a>`;
+                        html += `</div>`;
                         return html;
                     } else {
-                        return \`Acessei o banco de dados global, mas não localizei registros para "<b>\${searchTerm}</b>".\`;
+                        return `Acessei o banco de dados global, mas não localizei registros para "<b>${searchTerm}</b>".`;
                     }
                 } catch (e) {
-                    return \`Erro na pesquisa global.\`;
+                    return `Erro na pesquisa global.`;
                 }
             }
 
@@ -828,14 +828,14 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.handled && data.html) {
-                        return \`<div style="padding: 5px;">\${data.html}</div>\`;
+                        return `<div style="padding: 5px;">${data.html}</div>`;
                     }
                 }
             } catch (e) {
                 console.error("Erro API Interna:", e);
             }
 
-            return \`Comando "<b>\${perguntaOriginal}</b>" incorreto ou com parâmetros faltando. Digite <b>/ajuda</b>.\`;
+            return `Comando "<b>${perguntaOriginal}</b>" incorreto ou com parâmetros faltando. Digite <b>/ajuda</b>.`;
         }
     </script>
 </body>
