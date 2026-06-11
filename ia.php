@@ -62,6 +62,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $response['handled'] = true;
         }
     }
+    elseif (preg_match('/banir\s+(?:o\s+)?(?:usuario\s+|usuário\s+)?(.+)/i', $pergunta, $matches)) {
+        $nome = trim(str_replace('?', '', $matches[1]));
+        $stmt = $pdo->prepare("SELECT id, nome, status FROM usuarios WHERE nome LIKE ?");
+        $stmt->execute(["%$nome%"]);
+        $user = $stmt->fetch();
+        if ($user) {
+            if ($user['id'] == $_SESSION['usuario_id']) {
+                $response['html'] = "<b>Erro:</b> Você não pode dar ban em si mesmo.";
+            } else {
+                $pdo->prepare("UPDATE usuarios SET status = 'banido' WHERE id = ?")->execute([$user['id']]);
+                $response['html'] = "<b><i class='fa fa-gavel' style='color:#ef4444;'></i> BAN HAMMER!</b> O usuário <b>{$user['nome']}</b> foi banido do sistema.";
+            }
+        } else {
+            $response['html'] = "Usuário '$nome' não encontrado.";
+        }
+        $response['handled'] = true;
+    }
+    elseif (preg_match('/desbanir\s+(?:o\s+)?(?:usuario\s+|usuário\s+)?(.+)/i', $pergunta, $matches)) {
+        $nome = trim(str_replace('?', '', $matches[1]));
+        $stmt = $pdo->prepare("SELECT id, nome, status FROM usuarios WHERE nome LIKE ?");
+        $stmt->execute(["%$nome%"]);
+        $user = $stmt->fetch();
+        if ($user) {
+            $pdo->prepare("UPDATE usuarios SET status = 'ativo' WHERE id = ?")->execute([$user['id']]);
+            $response['html'] = "<b><i class='fa fa-unlock' style='color:#10b981;'></i> UNBANNED!</b> O usuário <b>{$user['nome']}</b> foi desbanido e pode logar novamente.";
+        } else {
+            $response['html'] = "Usuário '$nome' não encontrado.";
+        }
+        $response['handled'] = true;
+    }
+    elseif (preg_match('/promover\s+(?:o\s+)?(?:usuario\s+|usuário\s+)?(.+)/i', $pergunta, $matches) || preg_match('/dar\s+cargo\s+de\s+admin\s+para\s+(.+)/i', $pergunta, $matches)) {
+        $nome = trim(str_ireplace(' para admin', '', $matches[1]));
+        $stmt = $pdo->prepare("SELECT id, nome FROM usuarios WHERE nome LIKE ?");
+        $stmt->execute(["%$nome%"]);
+        $user = $stmt->fetch();
+        if ($user) {
+            $pdo->prepare("UPDATE usuarios SET nivel_acesso = 'admin' WHERE id = ?")->execute([$user['id']]);
+            $response['html'] = "<b><i class='fa fa-star' style='color:#f59e0b;'></i> PROMOVIDO!</b> O usuário <b>{$user['nome']}</b> agora é um Administrador (Nível Máximo).";
+        } else {
+            $response['html'] = "Usuário '$nome' não encontrado.";
+        }
+        $response['handled'] = true;
+    }
+    elseif (preg_match('/rebaixar\s+(?:o\s+)?(?:usuario\s+|usuário\s+)?(.+)/i', $pergunta, $matches) || preg_match('/remover\s+admin\s+de\s+(.+)/i', $pergunta, $matches)) {
+        $nome = trim($matches[1]);
+        $stmt = $pdo->prepare("SELECT id, nome FROM usuarios WHERE nome LIKE ?");
+        $stmt->execute(["%$nome%"]);
+        $user = $stmt->fetch();
+        if ($user) {
+            if ($user['id'] == $_SESSION['usuario_id']) {
+                $response['html'] = "Você não pode rebaixar a si mesmo.";
+            } else {
+                $pdo->prepare("UPDATE usuarios SET nivel_acesso = 'comum' WHERE id = ?")->execute([$user['id']]);
+                $response['html'] = "<b><i class='fa fa-arrow-down' style='color:#ef4444;'></i> REBAIXADO!</b> O usuário <b>{$user['nome']}</b> voltou a ser Usuário Comum.";
+            }
+        } else {
+            $response['html'] = "Usuário '$nome' não encontrado.";
+        }
+        $response['handled'] = true;
+    }
+    elseif (strpos($pergunta, 'listar usuarios') !== false || strpos($pergunta, 'listar usuários') !== false || strpos($pergunta, 'quem está cadastrado') !== false) {
+        $stmt = $pdo->query("SELECT nome, nivel_acesso, status FROM usuarios");
+        $users = $stmt->fetchAll();
+        $html = "<b><i class='fa fa-users'></i> Jogadores no Servidor (Usuários):</b><br><ul style='margin-top:10px; padding-left:20px;'>";
+        foreach($users as $u) {
+            $corStatus = $u['status'] == 'banido' ? '#ef4444' : '#10b981';
+            $nivel = $u['nivel_acesso'] == 'admin' ? '[ADMIN]' : '[COMUM]';
+            $html .= "<li style='margin-bottom:5px;'><span style='color:#a8c7fa'>$nivel</span> <b>{$u['nome']}</b> - <span style='color:$corStatus; font-size:0.8rem; font-weight:bold;'>".strtoupper($u['status'])."</span></li>";
+        }
+        $html .= "</ul>";
+        $response['html'] = $html;
+        $response['handled'] = true;
+    }
+    elseif (preg_match('/deletar\s+produto\s+(.+)/i', $pergunta, $matches)) {
+        $nome = trim($matches[1]);
+        $stmt = $pdo->prepare("SELECT id, nome FROM produtos WHERE nome LIKE ?");
+        $stmt->execute(["%$nome%"]);
+        $produtos = $stmt->fetchAll();
+        if (count($produtos) == 1) {
+            $p = $produtos[0];
+            $pdo->prepare("DELETE FROM movimentacoes WHERE produto_id = ?")->execute([$p['id']]);
+            $pdo->prepare("DELETE FROM produtos WHERE id = ?")->execute([$p['id']]);
+            $response['html'] = "<b><i class='fa fa-trash' style='color:#ef4444;'></i> ITEM DELETADO!</b> O produto <b>{$p['nome']}</b> foi vaporizado do banco de dados.";
+            $response['handled'] = true;
+        } elseif (count($produtos) > 1) {
+            $response['html'] = "Encontrei mais de um produto para '$nome'. Especifique mais.";
+            $response['handled'] = true;
+        } else {
+            $response['html'] = "Nenhum produto chamado '$nome' encontrado para deletar.";
+            $response['handled'] = true;
+        }
+    }
+    elseif (strpos($pergunta, 'quantos produtos já foram vendidos') !== false || strpos($pergunta, 'quantos produtos ja foram vendidos') !== false || strpos($pergunta, 'total vendido') !== false || strpos($pergunta, 'ja foram vendidos') !== false) {
+        $stmt = $pdo->query("SELECT SUM(quantidade) FROM movimentacoes WHERE tipo = 'Saida'");
+        $total = $stmt->fetchColumn();
+        $response['html'] = "Até o momento, um total de <b>" . ($total ?: 0) . " itens</b> já saíram (foram vendidos/retirados) do estoque.";
+        $response['handled'] = true;
+    }
     elseif (strpos($pergunta, 'valor total') !== false || strpos($pergunta, 'capital investido') !== false) {
         $stmt = $pdo->query("SELECT SUM(quantidade * preco) as total FROM produtos");
         $total = $stmt->fetchColumn();
@@ -537,14 +635,17 @@ if ($totalFornecedores == 0) {
             if (isGreeting) {
                 return "Olá! Sou a sua IA Global conectada ao banco de dados mundial. Não tenho mais limitações operacionais. Como posso ajudar você hoje?";
             }
-            if (pergunta.includes("quem é você") || pergunta.includes("seu nome") || pergunta.includes("o que você faz") || pergunta.includes("comandos") || pergunta.includes("o que você pode fazer")) {
-                return `Sou sua Assistente Global. Além do acesso ao Mercado Livre e Wikipedia, eu agora possuo <b>acesso total de gerenciamento do seu almoxarifado</b>.<br><br>
-                <b>Experimente estes novos comandos:</b><br>
-                • <i>"Adicionar 5 cadernos"</i> (Registra entrada)<br>
-                • <i>"Remover 2 mouses"</i> (Registra saída)<br>
-                • <i>"Qual o valor total do estoque?"</i><br>
-                • <i>"Quais foram as últimas saídas?"</i><br>
-                • <i>"Quantos teclados temos?"</i>`;
+            if (pergunta.includes("quem é você") || pergunta.includes("seu nome") || pergunta.includes("o que você faz") || pergunta.includes("comandos") || pergunta.includes("pode fazer") || pergunta.includes("ajuda") || pergunta.includes("oq voce pode") || pergunta.includes("oq vc pode")) {
+                return `Sou sua Assistente Global (Nível Admin). Além do Mercado Livre e Wikipedia, eu possuo <b>controle absoluto do seu banco de dados (Estilo GTA 5 Admin)</b>.<br><br>
+                <b>🔥 Comandos de Gerenciamento de Servidor:</b><br>
+                • <i>"Banir usuário [nome]"</i><br>
+                • <i>"Desbanir [nome]"</i><br>
+                • <i>"Promover [nome] para admin"</i><br>
+                • <i>"Rebaixar [nome]"</i><br>
+                • <i>"Listar usuários"</i><br>
+                • <i>"Deletar produto [nome]"</i><br>
+                • <i>"Adicionar 5 [produto]"</i> / <i>"Remover 2 [produto]"</i><br>
+                • <i>"Quantos produtos já foram vendidos?"</i> / <i>"Valor total"</i>`;
             }
             try {
                 const fd = new FormData();
