@@ -69,6 +69,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $response['html'] = "<b>Erro:</b> Você não pode dar ban em si mesmo.";
             } else {
                 $pdo->prepare("UPDATE usuarios SET status = 'banido' WHERE id = ?")->execute([$user['id']]);
+                
+                $detalhes = "Baniu o usuário ID {$user['id']} ({$user['nome']}) via Terminal IA";
+                $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, 'Banir Usuário', ?)")
+                    ->execute([$_SESSION['usuario_id'], $detalhes]);
+                
                 $response['html'] = "<b><i class='fa fa-gavel' style='color:#ef4444;'></i> BAN HAMMER!</b> O usuário <b>{$user['nome']}</b> foi banido.";
             }
         } else {
@@ -83,6 +88,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $user = $stmt->fetch();
         if ($user) {
             $pdo->prepare("UPDATE usuarios SET status = 'ativo' WHERE id = ?")->execute([$user['id']]);
+            
+            $detalhes = "Desbaniu o usuário ID {$user['id']} ({$user['nome']}) via Terminal IA";
+            $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, 'Desbanir Usuário', ?)")
+                ->execute([$_SESSION['usuario_id'], $detalhes]);
+                
             $response['html'] = "<b><i class='fa fa-unlock' style='color:#10b981;'></i> UNBANNED!</b> O usuário <b>{$user['nome']}</b> foi desbanido.";
         } else {
             $response['html'] = "Usuário '$termo' não encontrado.";
@@ -96,6 +106,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $user = $stmt->fetch();
         if ($user) {
             $pdo->prepare("UPDATE usuarios SET nivel_acesso = 'admin' WHERE id = ?")->execute([$user['id']]);
+            
+            $detalhes = "Alterou nível do ID {$user['id']} ({$user['nome']}) para admin via Terminal IA";
+            $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, 'Mudar Nível', ?)")
+                ->execute([$_SESSION['usuario_id'], $detalhes]);
+                
             $response['html'] = "<b><i class='fa fa-star' style='color:#f59e0b;'></i> PROMOVIDO!</b> O usuário <b>{$user['nome']}</b> agora é Admin.";
         } else {
             $response['html'] = "Usuário '$termo' não encontrado.";
@@ -112,6 +127,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $response['html'] = "Você não pode rebaixar a si mesmo.";
             } else {
                 $pdo->prepare("UPDATE usuarios SET nivel_acesso = 'comum' WHERE id = ?")->execute([$user['id']]);
+                
+                $detalhes = "Alterou nível do ID {$user['id']} ({$user['nome']}) para comum via Terminal IA";
+                $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, 'Mudar Nível', ?)")
+                    ->execute([$_SESSION['usuario_id'], $detalhes]);
+                    
                 $response['html'] = "<b><i class='fa fa-arrow-down' style='color:#ef4444;'></i> REBAIXADO!</b> O usuário <b>{$user['nome']}</b> voltou a ser Usuário Comum.";
             }
         } else {
@@ -142,6 +162,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $p = $produtos[0];
             $pdo->prepare("DELETE FROM movimentacoes WHERE produto_id = ?")->execute([$p['id']]);
             $pdo->prepare("DELETE FROM produtos WHERE id = ?")->execute([$p['id']]);
+            
+            $detalhes = "Excluiu o produto ID {$p['id']} ({$p['nome']}) do banco de dados via Terminal IA";
+            $pdo->prepare("INSERT INTO logs_atividades (usuario_id, acao, detalhes) VALUES (?, 'Excluir Produto', ?)")
+                ->execute([$_SESSION['usuario_id'], $detalhes]);
+                
             $response['html'] = "<b><i class='fa fa-trash' style='color:#ef4444;'></i> ITEM DELETADO!</b> O produto <b>{$p['nome']}</b> foi vaporizado.";
         } else {
             $response['html'] = "Produto '$nome' não encontrado ou inespecífico.";
