@@ -40,6 +40,13 @@ foreach($categoriasEstoque as $cat) {
     $catNomes[] = $cat['nome'];
     $catTotais[] = $cat['total'];
 }
+
+$userEmail = '';
+if(isset($_SESSION['usuario_id'])){
+    $stmtEmail = $pdo->prepare("SELECT email FROM usuarios WHERE id = ?");
+    $stmtEmail->execute([$_SESSION['usuario_id']]);
+    $userEmail = $stmtEmail->fetchColumn();
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -158,10 +165,15 @@ table th{ background:#e2e8f0; }
     <div class="topbar">
         <h1>Dashboard</h1>
         <div class="usuario">
-            <img src="https://i.pravatar.cc/100" alt="Usuário">
-            <div>
-                <strong><?= htmlspecialchars($_SESSION['usuario_nome']) ?></strong>
-                <p>Almoxarifado Central <?= (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin') ? '<span style="color:var(--primary-color);font-weight:bold;">[Admin]</span>' : '' ?></p>
+            <div style="background: rgba(37,99,235,0.05); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(37,99,235,0.2);">
+                <strong style="font-size: 1.1rem; display: block; color: var(--text-color); margin-bottom: 4px;"><?= htmlspecialchars($_SESSION['usuario_nome']) ?></strong>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2px;">
+                    <i class="fa fa-envelope" style="font-size: 0.8rem; margin-right: 4px;"></i> <?= htmlspecialchars($userEmail ?: 'Sem e-mail') ?>
+                </p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    <i class="fa fa-id-badge" style="font-size: 0.8rem; margin-right: 4px;"></i> Almoxarifado Central 
+                    <?= (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin') ? '<span style="color:var(--primary-color);font-weight:bold;margin-left:5px;">[Admin]</span>' : '<span style="color:#10b981;font-weight:bold;margin-left:5px;">[Comum]</span>' ?>
+                </p>
             </div>
         </div>
     </div>
