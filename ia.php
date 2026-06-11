@@ -558,9 +558,16 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
     <aside class="sidebar">
         <div class="logo"><h2>ALMOX</h2></div>
         <ul class="menu">
+            <li><a href="telainicial.php"><i class="fa fa-house"></i> Início</a></li>
             <li><a href="dashboard.php"><i class="fa fa-chart-line"></i> Dashboard</a></li>
             <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
             <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
+            <li><a href="fornecedores.php"><i class="fa fa-truck"></i> Fornecedores</a></li>
+            <?php if (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin'): ?>
+            <li><a href="usuarios.php"><i class="fa fa-users"></i> Usuários</a></li>
+            <li><a href="relatorios.php"><i class="fa fa-file-alt"></i> Relatórios</a></li>
+            <li><a href="configuracoes.php"><i class="fa fa-cog"></i> Configurações</a></li>
+            <?php endif; ?>
             <li><a href="ia.php" class="active"><i class="fa fa-sparkles"></i> IA Global (Gemini)</a></li>
         </ul>
     </aside>
