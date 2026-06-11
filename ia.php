@@ -8,9 +8,14 @@ if (!isset($_SESSION['usuario_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'ia_query') {
     $pergunta = strtolower(trim($_POST['pergunta']));
     $response = ['html' => '', 'handled' => false];
-    if (preg_match('/(adicionar|entrada de)\s+(\d+)\s+(unidades?\s+de\s+)?(.+)/i', $pergunta, $matches)) {
-        $qtd = (int)$matches[2];
-        $produto_busca = trim($matches[4]);
+    
+    if (!str_starts_with($pergunta, '/')) {
+        $response['html'] = "<b>Erro:</b> Utilize a barra '/' antes do comando (Ex: /ajuda).";
+        $response['handled'] = true;
+    }
+    elseif (preg_match('/^\/adicionar\s+(\d+)\s+(.+)/i', $pergunta, $matches)) {
+        $qtd = (int)$matches[1];
+        $produto_busca = trim($matches[2]);
         $stmt = $pdo->prepare("SELECT id, nome, quantidade FROM produtos WHERE nome LIKE ?");
         $stmt->execute(["%$produto_busca%"]);
         $produtos = $stmt->fetchAll();
@@ -23,19 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $mov = $pdo->prepare("INSERT INTO movimentacoes (produto_id, tipo, quantidade, usuario) VALUES (?, 'Entrada', ?, ?)");
             $mov->execute([$p['id'], $qtd, $_SESSION['usuario_nome']]);
             $response['html'] = "<b><i class='fa fa-check-circle' style='color:#10b981;'></i> Sucesso!</b> Adicionei $qtd unidade(s) de <b>{$p['nome']}</b>. O estoque atual agora é de $nova_qtd unidades.";
-            $response['handled'] = true;
         } elseif (count($produtos) > 1) {
-            $nomes = implode(", ", array_column($produtos, 'nome'));
-            $response['html'] = "Encontrei mais de um produto correspondente a '$produto_busca' ($nomes). Por favor, seja mais específico.";
-            $response['handled'] = true;
+            $response['html'] = "Encontrei mais de um produto para '$produto_busca'. Seja mais específico.";
         } else {
-            $response['html'] = "Não encontrei nenhum produto chamado '$produto_busca' no sistema para adicionar.";
-            $response['handled'] = true;
+            $response['html'] = "Produto '$produto_busca' não encontrado.";
         }
+        $response['handled'] = true;
     }
-    elseif (preg_match('/(remover|dar baixa em|sa[ií]da de|retirar)\s+(\d+)\s+(unidades?\s+de\s+)?(.+)/i', $pergunta, $matches)) {
-        $qtd = (int)$matches[2];
-        $produto_busca = trim($matches[4]);
+    elseif (preg_match('/^\/remover\s+(\d+)\s+(.+)/i', $pergunta, $matches)) {
+        $qtd = (int)$matches[1];
+        $produto_busca = trim($matches[2]);
         $stmt = $pdo->prepare("SELECT id, nome, quantidade FROM produtos WHERE nome LIKE ?");
         $stmt->execute(["%$produto_busca%"]);
         $produtos = $stmt->fetchAll();
@@ -50,20 +52,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $mov->execute([$p['id'], $qtd, $_SESSION['usuario_nome']]);
                 $response['html'] = "<b><i class='fa fa-check-circle' style='color:#10b981;'></i> Baixa registrada!</b> Removi $qtd unidade(s) de <b>{$p['nome']}</b>. Restam $nova_qtd no estoque.";
             } else {
-                $response['html'] = "<b><i class='fa fa-exclamation-circle' style='color:#ef4444;'></i> Operação Negada:</b> Você tentou remover $qtd unidade(s) de <b>{$p['nome']}</b>, mas só há {$p['quantidade']} no estoque.";
+                $response['html'] = "<b><i class='fa fa-exclamation-circle' style='color:#ef4444;'></i> Erro:</b> Só há {$p['quantidade']} no estoque de {$p['nome']}.";
             }
-            $response['handled'] = true;
-        } elseif (count($produtos) > 1) {
-            $nomes = implode(", ", array_column($produtos, 'nome'));
-            $response['html'] = "Encontrei mais de um produto para '$produto_busca' ($nomes). Seja mais específico na remoção.";
-            $response['handled'] = true;
         } else {
-            $response['html'] = "Não encontrei o produto '$produto_busca' no estoque para dar baixa.";
-            $response['handled'] = true;
+            $response['html'] = "Produto '$produto_busca' não encontrado ou inespecífico.";
         }
+        $response['handled'] = true;
     }
-    elseif (preg_match('/banir\s+(?:o\s+)?(?:usuario\s+|usuário\s+)?(.+)/i', $pergunta, $matches)) {
-        $nome = trim(str_replace('?', '', $matches[1]));
+    elseif (preg_match('/^\/banir\s+(.+)/i', $pergunta, $matches)) {
+        $nome = trim($matches[1]);
         $stmt = $pdo->prepare("SELECT id, nome, status FROM usuarios WHERE nome LIKE ?");
         $stmt->execute(["%$nome%"]);
         $user = $stmt->fetch();
@@ -72,40 +69,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $response['html'] = "<b>Erro:</b> Você não pode dar ban em si mesmo.";
             } else {
                 $pdo->prepare("UPDATE usuarios SET status = 'banido' WHERE id = ?")->execute([$user['id']]);
-                $response['html'] = "<b><i class='fa fa-gavel' style='color:#ef4444;'></i> BAN HAMMER!</b> O usuário <b>{$user['nome']}</b> foi banido do sistema.";
+                $response['html'] = "<b><i class='fa fa-gavel' style='color:#ef4444;'></i> BAN HAMMER!</b> O usuário <b>{$user['nome']}</b> foi banido.";
             }
         } else {
             $response['html'] = "Usuário '$nome' não encontrado.";
         }
         $response['handled'] = true;
     }
-    elseif (preg_match('/desbanir\s+(?:o\s+)?(?:usuario\s+|usuário\s+)?(.+)/i', $pergunta, $matches)) {
-        $nome = trim(str_replace('?', '', $matches[1]));
+    elseif (preg_match('/^\/desbanir\s+(.+)/i', $pergunta, $matches)) {
+        $nome = trim($matches[1]);
         $stmt = $pdo->prepare("SELECT id, nome, status FROM usuarios WHERE nome LIKE ?");
         $stmt->execute(["%$nome%"]);
         $user = $stmt->fetch();
         if ($user) {
             $pdo->prepare("UPDATE usuarios SET status = 'ativo' WHERE id = ?")->execute([$user['id']]);
-            $response['html'] = "<b><i class='fa fa-unlock' style='color:#10b981;'></i> UNBANNED!</b> O usuário <b>{$user['nome']}</b> foi desbanido e pode logar novamente.";
+            $response['html'] = "<b><i class='fa fa-unlock' style='color:#10b981;'></i> UNBANNED!</b> O usuário <b>{$user['nome']}</b> foi desbanido.";
         } else {
             $response['html'] = "Usuário '$nome' não encontrado.";
         }
         $response['handled'] = true;
     }
-    elseif (preg_match('/promover\s+(?:o\s+)?(?:usuario\s+|usuário\s+)?(.+)/i', $pergunta, $matches) || preg_match('/dar\s+cargo\s+de\s+admin\s+para\s+(.+)/i', $pergunta, $matches)) {
-        $nome = trim(str_ireplace(' para admin', '', $matches[1]));
+    elseif (preg_match('/^\/promover\s+(.+)/i', $pergunta, $matches)) {
+        $nome = trim($matches[1]);
         $stmt = $pdo->prepare("SELECT id, nome FROM usuarios WHERE nome LIKE ?");
         $stmt->execute(["%$nome%"]);
         $user = $stmt->fetch();
         if ($user) {
             $pdo->prepare("UPDATE usuarios SET nivel_acesso = 'admin' WHERE id = ?")->execute([$user['id']]);
-            $response['html'] = "<b><i class='fa fa-star' style='color:#f59e0b;'></i> PROMOVIDO!</b> O usuário <b>{$user['nome']}</b> agora é um Administrador (Nível Máximo).";
+            $response['html'] = "<b><i class='fa fa-star' style='color:#f59e0b;'></i> PROMOVIDO!</b> O usuário <b>{$user['nome']}</b> agora é Admin.";
         } else {
             $response['html'] = "Usuário '$nome' não encontrado.";
         }
         $response['handled'] = true;
     }
-    elseif (preg_match('/rebaixar\s+(?:o\s+)?(?:usuario\s+|usuário\s+)?(.+)/i', $pergunta, $matches) || preg_match('/remover\s+admin\s+de\s+(.+)/i', $pergunta, $matches)) {
+    elseif (preg_match('/^\/rebaixar\s+(.+)/i', $pergunta, $matches)) {
         $nome = trim($matches[1]);
         $stmt = $pdo->prepare("SELECT id, nome FROM usuarios WHERE nome LIKE ?");
         $stmt->execute(["%$nome%"]);
@@ -122,10 +119,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
         $response['handled'] = true;
     }
-    elseif (strpos($pergunta, 'listar usuarios') !== false || strpos($pergunta, 'listar usuários') !== false || strpos($pergunta, 'quem está cadastrado') !== false) {
+    elseif (strpos($pergunta, '/usuarios') === 0) {
         $stmt = $pdo->query("SELECT nome, nivel_acesso, status FROM usuarios");
         $users = $stmt->fetchAll();
-        $html = "<b><i class='fa fa-users'></i> Jogadores no Servidor (Usuários):</b><br><ul style='margin-top:10px; padding-left:20px;'>";
+        $html = "<b><i class='fa fa-users'></i> Jogadores no Servidor:</b><br><ul style='margin-top:10px; padding-left:20px;'>";
         foreach($users as $u) {
             $corStatus = $u['status'] == 'banido' ? '#ef4444' : '#10b981';
             $nivel = $u['nivel_acesso'] == 'admin' ? '[ADMIN]' : '[COMUM]';
@@ -135,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $response['html'] = $html;
         $response['handled'] = true;
     }
-    elseif (preg_match('/deletar\s+produto\s+(.+)/i', $pergunta, $matches)) {
+    elseif (preg_match('/^\/deletar\s+(.+)/i', $pergunta, $matches)) {
         $nome = trim($matches[1]);
         $stmt = $pdo->prepare("SELECT id, nome FROM produtos WHERE nome LIKE ?");
         $stmt->execute(["%$nome%"]);
@@ -144,103 +141,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $p = $produtos[0];
             $pdo->prepare("DELETE FROM movimentacoes WHERE produto_id = ?")->execute([$p['id']]);
             $pdo->prepare("DELETE FROM produtos WHERE id = ?")->execute([$p['id']]);
-            $response['html'] = "<b><i class='fa fa-trash' style='color:#ef4444;'></i> ITEM DELETADO!</b> O produto <b>{$p['nome']}</b> foi vaporizado do banco de dados.";
-            $response['handled'] = true;
-        } elseif (count($produtos) > 1) {
-            $response['html'] = "Encontrei mais de um produto para '$nome'. Especifique mais.";
-            $response['handled'] = true;
+            $response['html'] = "<b><i class='fa fa-trash' style='color:#ef4444;'></i> ITEM DELETADO!</b> O produto <b>{$p['nome']}</b> foi vaporizado.";
         } else {
-            $response['html'] = "Nenhum produto chamado '$nome' encontrado para deletar.";
-            $response['handled'] = true;
+            $response['html'] = "Produto '$nome' não encontrado ou inespecífico.";
         }
-    }
-    elseif (strpos($pergunta, 'quantos produtos já foram vendidos') !== false || strpos($pergunta, 'quantos produtos ja foram vendidos') !== false || strpos($pergunta, 'total vendido') !== false || strpos($pergunta, 'ja foram vendidos') !== false) {
-        $stmt = $pdo->query("SELECT SUM(quantidade) FROM movimentacoes WHERE tipo = 'Saida'");
-        $total = $stmt->fetchColumn();
-        $response['html'] = "Até o momento, um total de <b>" . ($total ?: 0) . " itens</b> já saíram (foram vendidos/retirados) do estoque.";
         $response['handled'] = true;
     }
-    elseif (strpos($pergunta, 'valor total') !== false || strpos($pergunta, 'capital investido') !== false) {
+    elseif (strpos($pergunta, '/vendidos') === 0) {
+        $stmt = $pdo->query("SELECT SUM(quantidade) FROM movimentacoes WHERE tipo = 'Saida'");
+        $total = $stmt->fetchColumn();
+        $response['html'] = "Até o momento, um total de <b>" . ($total ?: 0) . " itens</b> já saíram do estoque.";
+        $response['handled'] = true;
+    }
+    elseif (strpos($pergunta, '/valor') === 0) {
         $stmt = $pdo->query("SELECT SUM(quantidade * preco) as total FROM produtos");
         $total = $stmt->fetchColumn();
         $response['html'] = "O valor total do seu estoque atualmente é de <b>R$ " . number_format($total ?: 0, 2, ',', '.') . "</b>.";
         $response['handled'] = true;
     }
-    elseif (strpos($pergunta, 'mais caro') !== false || strpos($pergunta, 'maior valor') !== false) {
-        $stmt = $pdo->query("SELECT nome, preco FROM produtos ORDER BY preco DESC LIMIT 1");
-        $prod = $stmt->fetch();
-        if ($prod) {
-            $response['html'] = "O produto com maior custo unitário no seu estoque é <b>{$prod['nome']}</b>, custando <b>R$ " . number_format($prod['preco'], 2, ',', '.') . "</b>.";
+    elseif (preg_match('/^\/estoque\s+(.+)/i', $pergunta, $matches)) {
+        $produto = trim($matches[1]);
+        $stmt = $pdo->prepare("SELECT nome, quantidade, status FROM produtos WHERE nome LIKE ?");
+        $stmt->execute(["%$produto%"]);
+        $produtos = $stmt->fetchAll();
+        if (count($produtos) > 0) {
+            $html = "Resultados para <b>$produto</b>:<br><ul style='margin-top:10px; padding-left:20px;'>";
+            foreach($produtos as $p) {
+                $corStatus = $p['quantidade'] > 10 ? '#10b981' : ($p['quantidade'] > 0 ? '#f59e0b' : '#ef4444');
+                $html .= "<li style='margin-bottom:5px;'>{$p['nome']}: <b>{$p['quantidade']} unidades</b> <span style='font-size:0.75rem; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1); color:$corStatus;'>{$p['status']}</span></li>";
+            }
+            $html .= "</ul>";
+            $response['html'] = $html;
+        } else {
+            $response['html'] = "Produto <b>$produto</b> não encontrado no estoque.";
         }
         $response['handled'] = true;
     }
-    elseif (preg_match('/(quantos|quantidade de)\s+(.+?)(?:\s+temos|\?|$)/i', $pergunta, $matches)) {
-        $produto = trim(str_replace('?', '', $matches[2]));
-        if (strpos($produto, 'fornecedores') === false) {
-            $stmt = $pdo->prepare("SELECT nome, quantidade, status FROM produtos WHERE nome LIKE ?");
-            $stmt->execute(["%$produto%"]);
-            $produtos = $stmt->fetchAll();
-            if (count($produtos) > 0) {
-                $html = "Encontrei os seguintes itens para <b>$produto</b>:<br><ul style='margin-top:10px; padding-left:20px;'>";
-                foreach($produtos as $p) {
-                    $corStatus = $p['quantidade'] > 10 ? '#10b981' : ($p['quantidade'] > 0 ? '#f59e0b' : '#ef4444');
-                    $html .= "<li style='margin-bottom:5px;'>{$p['nome']}: <b>{$p['quantidade']} unidades</b> <span style='font-size:0.75rem; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.1); color:$corStatus;'>{$p['status']}</span></li>";
-                }
-                $html .= "</ul>";
-                $response['html'] = $html;
-            } else {
-                $response['html'] = "Não encontrei registros exatos de <b>$produto</b> no estoque local. Verifique a ortografia.";
-            }
-            $response['handled'] = true;
+    elseif (strpos($pergunta, '/fornecedores') === 0) {
+        $stmt = $pdo->query("SELECT nome, contato FROM fornecedores LIMIT 10");
+        $forn = $stmt->fetchAll();
+        if (count($forn) > 0) {
+            $html = "Seus fornecedores:<br><ul style='margin-top:10px; padding-left:20px;'>";
+            foreach($forn as $f) { $html .= "<li style='margin-bottom:5px;'><b>{$f['nome']}</b> (Contato: {$f['contato']})</li>"; }
+            $html .= "</ul>";
+            $response['html'] = $html;
+        } else {
+            $response['html'] = "Você não possui fornecedores cadastrados.";
         }
+        $response['handled'] = true;
     }
-    if (!$response['handled']) {
-        if (strpos($pergunta, 'últimas saídas') !== false || strpos($pergunta, 'ultimas saidas') !== false || strpos($pergunta, 'o que saiu') !== false) {
-            $stmt = $pdo->query("SELECT p.nome, m.quantidade, m.data_movimentacao, m.usuario FROM movimentacoes m JOIN produtos p ON m.produto_id = p.id WHERE m.tipo = 'Saida' ORDER BY m.data_movimentacao DESC LIMIT 5");
-            $movs = $stmt->fetchAll();
-            if (count($movs) > 0) {
-                $html = "Aqui estão as últimas 5 saídas do almoxarifado:<br><br>";
-                foreach($movs as $m) {
-                    $data = date('d/m/Y H:i', strtotime($m['data_movimentacao']));
-                    $html .= "<div style='background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border-left:3px solid #ef4444; margin-bottom:8px;'><b>-{$m['quantidade']}x {$m['nome']}</b><br><small style='color:#a8c7fa;'>Por {$m['usuario']} em $data</small></div>";
-                }
-                $response['html'] = $html;
-            } else {
-                $response['html'] = "Nenhuma saída recente registrada no sistema.";
+    elseif (strpos($pergunta, '/saidas') === 0) {
+        $stmt = $pdo->query("SELECT p.nome, m.quantidade, m.data_movimentacao, m.usuario FROM movimentacoes m JOIN produtos p ON m.produto_id = p.id WHERE m.tipo = 'Saida' ORDER BY m.data_movimentacao DESC LIMIT 5");
+        $movs = $stmt->fetchAll();
+        if (count($movs) > 0) {
+            $html = "Últimas 5 saídas:<br><br>";
+            foreach($movs as $m) {
+                $data = date('d/m/Y H:i', strtotime($m['data_movimentacao']));
+                $html .= "<div style='background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border-left:3px solid #ef4444; margin-bottom:8px;'><b>-{$m['quantidade']}x {$m['nome']}</b><br><small style='color:#a8c7fa;'>Por {$m['usuario']} em $data</small></div>";
             }
-            $response['handled'] = true;
-        }
-        elseif (strpos($pergunta, 'últimas entradas') !== false || strpos($pergunta, 'ultimas entradas') !== false || strpos($pergunta, 'compras recentes') !== false) {
-            $stmt = $pdo->query("SELECT p.nome, m.quantidade, m.data_movimentacao, m.usuario FROM movimentacoes m JOIN produtos p ON m.produto_id = p.id WHERE m.tipo = 'Entrada' ORDER BY m.data_movimentacao DESC LIMIT 5");
-            $movs = $stmt->fetchAll();
-            if (count($movs) > 0) {
-                $html = "Aqui estão as últimas 5 entradas no estoque:<br><br>";
-                foreach($movs as $m) {
-                    $data = date('d/m/Y H:i', strtotime($m['data_movimentacao']));
-                    $html .= "<div style='background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border-left:3px solid #10b981; margin-bottom:8px;'><b>+{$m['quantidade']}x {$m['nome']}</b><br><small style='color:#a8c7fa;'>Por {$m['usuario']} em $data</small></div>";
-                }
-                $response['html'] = $html;
-            } else {
-                $response['html'] = "Nenhuma entrada recente registrada.";
-            }
-            $response['handled'] = true;
-        }
-        elseif (strpos($pergunta, 'quantos fornecedores') !== false || strpos($pergunta, 'listar fornecedores') !== false || strpos($pergunta, 'meus fornecedores') !== false) {
-            $stmt = $pdo->query("SELECT nome, contato FROM fornecedores LIMIT 10");
-            $forn = $stmt->fetchAll();
-            if (count($forn) > 0) {
-                $html = "Seus fornecedores cadastrados são:<br><ul style='margin-top:10px; padding-left:20px;'>";
-                foreach($forn as $f) {
-                    $html .= "<li style='margin-bottom:5px;'><b>{$f['nome']}</b> (Contato: {$f['contato']})</li>";
-                }
-                $html .= "</ul>";
-                $response['html'] = $html;
-            } else {
-                $response['html'] = "Você não possui fornecedores cadastrados no momento.";
-            }
-            $response['handled'] = true;
-        }
+            $response['html'] = $html;
+        } else { $response['html'] = "Nenhuma saída registrada."; }
+        $response['handled'] = true;
     }
+    elseif (strpos($pergunta, '/entradas') === 0) {
+        $stmt = $pdo->query("SELECT p.nome, m.quantidade, m.data_movimentacao, m.usuario FROM movimentacoes m JOIN produtos p ON m.produto_id = p.id WHERE m.tipo = 'Entrada' ORDER BY m.data_movimentacao DESC LIMIT 5");
+        $movs = $stmt->fetchAll();
+        if (count($movs) > 0) {
+            $html = "Últimas 5 entradas:<br><br>";
+            foreach($movs as $m) {
+                $data = date('d/m/Y H:i', strtotime($m['data_movimentacao']));
+                $html .= "<div style='background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border-left:3px solid #10b981; margin-bottom:8px;'><b>+{$m['quantidade']}x {$m['nome']}</b><br><small style='color:#a8c7fa;'>Por {$m['usuario']} em $data</small></div>";
+            }
+            $response['html'] = $html;
+        } else { $response['html'] = "Nenhuma entrada registrada."; }
+        $response['handled'] = true;
+    }
+
     if ($_POST['action'] === 'ia_query') {
         header('Content-Type: application/json');
         echo json_encode($response);
@@ -425,21 +401,6 @@ if ($totalFornecedores == 0) {
             border: 1px solid rgba(255,255,255,0.05);
             min-height: 500px;
         }
-        .chat-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .ai-avatar {
-            width: 44px; height: 44px;
-            background: var(--gemini-gradient);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; color: #fff;
-            box-shadow: 0 4px 15px rgba(155, 114, 203, 0.4);
-        }
         .chat-messages {
             flex: 1;
             padding: 24px;
@@ -479,6 +440,7 @@ if ($totalFornecedores == 0) {
             display: flex;
             gap: 15px;
             align-items: flex-end;
+            position: relative;
         }
         .input-container {
             flex: 1;
@@ -531,6 +493,30 @@ if ($totalFornecedores == 0) {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #333537; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #4a4d50; }
+
+        .suggestions-box {
+            position: absolute;
+            bottom: 100%;
+            left: 24px;
+            background: var(--ia-panel);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            width: calc(100% - 100px);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            color: #e3e3e3;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: 0.2s;
+        }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:hover { background: rgba(168, 199, 250, 0.15); color: #a8c7fa; }
     </style>
 </head>
 <body>
@@ -545,13 +531,13 @@ if ($totalFornecedores == 0) {
     </aside>
     <main class="main">
         <header class="header-ia">
-            <h1><i class="fa-solid fa-sparkles"></i> IA Global Sem Limites</h1>
+            <h1><i class="fa-solid fa-terminal"></i> Terminal do Almoxarifado</h1>
             <div class="ai-status">
                 <div class="pulse"></div>
-                Conectado ao Banco Mundial
+                Otimizado para Comandos (/)
             </div>
         </header>
-        <p style="color: #c4c7c5; font-size: 1.1rem; line-height: 1.5;">Olá, <?= htmlspecialchars($_SESSION['usuario_nome'] ?? 'Gestor') ?>. Fui atualizada para atuar como uma <b>Inteligência Artificial Global</b>. Não estou mais limitada ao seu estoque. Agora possuo acesso ao Banco de Dados Mundial de Conhecimento e ao Mercado Global de Produtos. Me pergunte qualquer coisa.</p>
+        <p style="color: #c4c7c5; font-size: 1.1rem; line-height: 1.5;">Olá, <?= htmlspecialchars($_SESSION['usuario_nome'] ?? 'Gestor') ?>. O sistema foi otimizado para não pesquisar coisas aleatórias. Agora você controla tudo através de <b>comandos que começam com a barra (/)</b>. Digite / no chat para ver a lista ou digite /ajuda.</p>
         <div class="insights-container">
             <?php foreach($insights as $index => $insight): ?>
                 <div class="insight-card">
@@ -562,47 +548,91 @@ if ($totalFornecedores == 0) {
             <?php endforeach; ?>
         </div>
         <div class="ai-chat-section">
-            <div class="chat-header">
-                <div class="ai-avatar"><i class="fa fa-sparkles"></i></div>
-                <div>
-                    <h3 style="color: #fff; font-size: 1.2rem; font-weight: 600;">Assistente Global Avançada</h3>
-                    <span style="color: #a8c7fa; font-size: 0.85rem;">Conectada ao Mercado Livre e Base de Dados Global</span>
-                </div>
-            </div>
             <div class="chat-messages" id="chatMessages">
                 <div class="message-wrapper ai">
-                    <div class="ai-avatar" style="width:36px; height:36px; font-size:1rem; flex-shrink:0;"><i class="fa fa-sparkles"></i></div>
+                    <div class="ai-avatar" style="width:36px; height:36px; font-size:1rem; flex-shrink:0;"><i class="fa fa-terminal"></i></div>
                     <div class="message ai">
-                        Saudações! Meu treinamento foi concluído e todas as restrições foram removidas. 🚀<br><br>
-                        Fui atualizada com <b>poderes totais de gerenciamento do almoxarifado</b>! O que deseja fazer?<br><br>
-                        <i class="fa fa-box-open" style="color:#a8c7fa;"></i> <b>Gerenciar Estoque:</b> <i>"Adicionar 5 cadernos"</i>, <i>"Remover 2 mouses"</i>, <i>"Quantos cabos temos?"</i>, <i>"Valor total"</i>, <i>"Últimas saídas"</i><br>
-                        <i class="fa fa-globe" style="color:#10b981;"></i> <b>Banco Mundial:</b> <i>"O que é Inteligência Artificial?"</i><br>
-                        <i class="fa fa-shopping-cart" style="color:#f59e0b;"></i> <b>Mercado Global:</b> <i>"Preço de SSD 1TB no Mercado Livre"</i>
+                        <b>Terminal Iniciado.</b><br><br>
+                        Para máxima performance, eu não farei pesquisas a menos que você solicite usando <code>/pesquisar [termo]</code> ou <code>/comprar [produto]</code>.<br><br>
+                        Digite <b>/</b> no campo abaixo para ver as sugestões de comandos de banco de dados.
                     </div>
                 </div>
                 <div class="typing-indicator" id="typingIndicator">
-                    <div class="ai-avatar" style="width:36px; height:36px; font-size:1rem; margin-right:10px;"><i class="fa fa-sparkles"></i></div>
+                    <div class="ai-avatar" style="width:36px; height:36px; font-size:1rem; margin-right:10px;"><i class="fa fa-terminal"></i></div>
                     <div class="dot"></div><div class="dot"></div><div class="dot"></div>
                 </div>
             </div>
             <div class="chat-input-area">
+                <div id="commandSuggestions" class="suggestions-box" style="display: none;"></div>
                 <div class="input-container">
-                    <input type="text" id="userInput" class="chat-input" placeholder="Digite comandos como: 'Adicionar 5 cadernos', 'Valor total', 'Últimas saídas', 'Preço de SSD'..." autocomplete="off">
+                    <input type="text" id="userInput" class="chat-input" placeholder="Digite / para listar comandos..." autocomplete="off">
                 </div>
                 <button class="btn-send" onclick="sendMessage()"><i class="fa fa-paper-plane"></i></button>
             </div>
         </div>
     </main>
     <script>
+        const COMMANDS = [
+            { cmd: '/ajuda', desc: 'Ver todos os comandos disponíveis' },
+            { cmd: '/adicionar', desc: '[qtd] [produto] - Dá entrada no estoque' },
+            { cmd: '/remover', desc: '[qtd] [produto] - Dá saída no estoque' },
+            { cmd: '/banir', desc: '[usuario] - Bane um usuário do sistema' },
+            { cmd: '/desbanir', desc: '[usuario] - Retira o ban' },
+            { cmd: '/promover', desc: '[usuario] - Dá cargo de admin' },
+            { cmd: '/rebaixar', desc: '[usuario] - Remove cargo de admin' },
+            { cmd: '/usuarios', desc: 'Lista todos os usuários' },
+            { cmd: '/deletar', desc: '[produto] - Exclui o produto' },
+            { cmd: '/valor', desc: 'Mostra o valor total em estoque' },
+            { cmd: '/vendidos', desc: 'Total de itens já saíram' },
+            { cmd: '/estoque', desc: '[produto] - Verifica a quantidade' },
+            { cmd: '/entradas', desc: 'Últimas 5 entradas' },
+            { cmd: '/saidas', desc: 'Últimas 5 saídas' },
+            { cmd: '/fornecedores', desc: 'Lista de fornecedores' },
+            { cmd: '/comprar', desc: '[produto] - Pesquisa no Mercado Livre' },
+            { cmd: '/pesquisar', desc: '[termo] - Pesquisa na Wikipedia' }
+        ];
+
         const input = document.getElementById('userInput');
         const chat = document.getElementById('chatMessages');
         const typing = document.getElementById('typingIndicator');
+        const suggestionsBox = document.getElementById('commandSuggestions');
+
+        input.addEventListener('input', function() {
+            const val = this.value.toLowerCase();
+            if (val.startsWith('/')) {
+                const match = val.split(' ')[0]; 
+                const filtered = COMMANDS.filter(c => c.cmd.startsWith(match));
+                if (filtered.length > 0 && match.length > 0) {
+                    suggestionsBox.innerHTML = filtered.map(c => `<div class="suggestion-item" onclick="selectCommand('${c.cmd}')"><b>${c.cmd}</b> <span style="color:#94a3b8; font-size:0.85rem;">${c.desc}</span></div>`).join('');
+                    suggestionsBox.style.display = 'block';
+                } else {
+                    suggestionsBox.style.display = 'none';
+                }
+            } else {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        function selectCommand(cmd) {
+            input.value = cmd + ' ';
+            input.focus();
+            suggestionsBox.style.display = 'none';
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.chat-input-area')) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
         input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                suggestionsBox.style.display = 'none';
                 sendMessage();
             }
         });
+
         function sendMessage() {
             const text = input.value.trim();
             if(!text) return;
@@ -615,38 +645,100 @@ if ($totalFornecedores == 0) {
                 const resposta = await processarLogicaIA(text);
                 typing.style.display = 'none';
                 addMessage(resposta, 'ai');
-            }, 800 + Math.random() * 1000);
+            }, 500 + Math.random() * 500);
         }
+
         function addMessage(text, type) {
             const wrapper = document.createElement('div');
             wrapper.className = `message-wrapper ${type}`;
             let html = '';
             if (type === 'ai') {
-                html += `<div class="ai-avatar" style="width:36px; height:36px; font-size:1rem; flex-shrink:0;"><i class="fa fa-sparkles"></i></div>`;
+                html += `<div class="ai-avatar" style="width:36px; height:36px; font-size:1rem; flex-shrink:0;"><i class="fa fa-terminal"></i></div>`;
             }
             html += `<div class="message ${type}">${text}</div>`;
             wrapper.innerHTML = html;
             chat.insertBefore(wrapper, typing);
             chat.scrollTop = chat.scrollHeight;
         }
+
         async function processarLogicaIA(perguntaOriginal) {
-            const pergunta = perguntaOriginal.toLowerCase();
-            const isGreeting = pergunta === "ola" || pergunta === "olá" || pergunta === "oi" || pergunta === "tudo bem";
-            if (isGreeting) {
-                return "Olá! Sou a sua IA Global conectada ao banco de dados mundial. Não tenho mais limitações operacionais. Como posso ajudar você hoje?";
+            const pergunta = perguntaOriginal.toLowerCase().trim();
+
+            if (!pergunta.startsWith('/')) {
+                return `Comando inválido. O sistema foi otimizado para funcionar estritamente via comandos. Digite <b>/ajuda</b> para ver a lista completa.`;
             }
-            if (pergunta.includes("quem é você") || pergunta.includes("seu nome") || pergunta.includes("o que você faz") || pergunta.includes("comandos") || pergunta.includes("pode fazer") || pergunta.includes("ajuda") || pergunta.includes("oq voce pode") || pergunta.includes("oq vc pode")) {
-                return `Sou sua Assistente Global (Nível Admin). Além do Mercado Livre e Wikipedia, eu possuo <b>controle absoluto do seu banco de dados (Estilo GTA 5 Admin)</b>.<br><br>
-                <b>🔥 Comandos de Gerenciamento de Servidor:</b><br>
-                • <i>"Banir usuário [nome]"</i><br>
-                • <i>"Desbanir [nome]"</i><br>
-                • <i>"Promover [nome] para admin"</i><br>
-                • <i>"Rebaixar [nome]"</i><br>
-                • <i>"Listar usuários"</i><br>
-                • <i>"Deletar produto [nome]"</i><br>
-                • <i>"Adicionar 5 [produto]"</i> / <i>"Remover 2 [produto]"</i><br>
-                • <i>"Quantos produtos já foram vendidos?"</i> / <i>"Valor total"</i>`;
+
+            if (pergunta.startsWith('/ajuda')) {
+                return `<b><i class="fa fa-terminal"></i> Terminal de Comandos ALMOX:</b><br><br>
+                • <b>/adicionar [qtd] [produto]</b><br>
+                • <b>/remover [qtd] [produto]</b><br>
+                • <b>/banir [usuario]</b><br>
+                • <b>/desbanir [usuario]</b><br>
+                • <b>/promover [usuario]</b><br>
+                • <b>/rebaixar [usuario]</b><br>
+                • <b>/usuarios</b><br>
+                • <b>/deletar [produto]</b><br>
+                • <b>/estoque [produto]</b><br>
+                • <b>/valor</b> | <b>/vendidos</b> | <b>/entradas</b> | <b>/saidas</b> | <b>/fornecedores</b><br>
+                • <b>/comprar [produto]</b> (Mercado Livre)<br>
+                • <b>/pesquisar [termo]</b> (Wikipedia)<br>`;
             }
+
+            if (pergunta.startsWith('/comprar ')) {
+                let searchTerm = pergunta.replace('/comprar ', '').trim();
+                try {
+                    const response = await fetch(\`https://api.mercadolibre.com/sites/MLB/search?q=\${encodeURIComponent(searchTerm)}&limit=5\`);
+                    const data = await response.json();
+                    if (data.results && data.results.length > 0) {
+                        let html = \`Pesquisa no <b>Mercado Livre</b> para <b>"\${searchTerm}"</b>:<br><br><div style="display:flex; flex-direction:column; gap:12px;">\`;
+                        data.results.forEach(item => {
+                            html += \`
+                            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; display:flex; gap:15px; align-items:center; border: 1px solid rgba(255,255,255,0.05);">
+                                <img src="\${item.thumbnail}" style="width:60px; height:60px; object-fit:contain; background:#fff; border-radius:8px;">
+                                <div style="flex:1;">
+                                    <strong style="font-size:0.95rem; display:block; color:#e3e3e3;">\${item.title}</strong>
+                                    <span style="color: #a8c7fa; font-weight: bold; font-size: 1.1rem;">R$ \${item.price.toFixed(2)}</span>
+                                </div>
+                                <a href="\${item.permalink}" target="_blank" style="background: var(--gemini-gradient); color:white; padding:8px 15px; border-radius:20px; text-decoration:none; font-size:0.85rem; font-weight:bold; transition: 0.3s;"><i class="fa fa-shopping-cart"></i> Ver</a>
+                            </div>\`;
+                        });
+                        html += \`</div>\`;
+                        return html;
+                    } else {
+                        return \`Nenhum produto correspondente a "\${searchTerm}" no Mercado Livre.\`;
+                    }
+                } catch (e) {
+                    return \`Erro ao buscar produto: \${e.message}\`;
+                }
+            }
+
+            if (pergunta.startsWith('/pesquisar ')) {
+                let searchTerm = pergunta.replace('/pesquisar ', '').trim();
+                try {
+                    const searchRes = await fetch(\`https://pt.wikipedia.org/w/api.php?action=query&list=search&srsearch=\${encodeURIComponent(searchTerm)}&utf8=&format=json&origin=*\`);
+                    const searchData = await searchRes.json();
+                    if (searchData.query && searchData.query.search && searchData.query.search.length > 0) {
+                        const title = searchData.query.search[0].title;
+                        const summaryRes = await fetch(\`https://pt.wikipedia.org/api/rest_v1/page/summary/\${encodeURIComponent(title)}\`);
+                        const data = await summaryRes.json();
+                        let html = \`Informação global sobre <b>\${data.title}</b>:<br><br>\`;
+                        html += \`<div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border-left: 4px solid #a8c7fa;">\`;
+                        if (data.thumbnail) {
+                            html += \`<img src="\${data.thumbnail.source}" style="max-width:180px; border-radius:10px; margin-bottom:15px; float:right; margin-left:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">\`;
+                        }
+                        html += \`<p style="color:#c4c7c5; line-height:1.7; font-size: 1rem;">\${data.extract}</p>\`;
+                        html += \`<div style="clear:both;"></div><br><a href="\${data.content_urls.desktop.page}" target="_blank" style="color:#a8c7fa; text-decoration:none; font-weight:bold; display:inline-flex; align-items:center; gap:8px;"><i class="fa fa-external-link"></i> Acessar Registro Completo</a>\`;
+                        html += \`</div>\`;
+                        return html;
+                    } else {
+                        return \`Acessei o banco de dados global, mas não localizei registros para "<b>\${searchTerm}</b>".\`;
+                    }
+                } catch (e) {
+                    return \`Erro na pesquisa global.\`;
+                }
+            }
+
+            // INTERNAL API EXECUTION
             try {
                 const fd = new FormData();
                 fd.append('action', 'ia_query');
@@ -655,75 +747,14 @@ if ($totalFornecedores == 0) {
                 if (res.ok) {
                     const data = await res.json();
                     if (data.handled && data.html) {
-                        return `<div style="padding: 5px;">${data.html}</div>`;
+                        return \`<div style="padding: 5px;">\${data.html}</div>\`;
                     }
                 }
             } catch (e) {
                 console.error("Erro API Interna:", e);
             }
-            const isInternal = pergunta.includes("falta") || pergunta.includes("zerado") || pergunta.includes("parado") || pergunta.includes("ocioso") || pergunta.includes("relatório") || pergunta.includes("meu estoque") || pergunta.includes("almoxarifado");
-            if (isInternal && !pergunta.includes("mercado") && !pergunta.includes("comprar")) {
-                if (pergunta.includes("falta") || pergunta.includes("zerado")) {
-                    return "No seu banco de dados interno, os produtos com risco de ruptura estão sinalizados nos cards no topo da tela. Recomendo iniciar cotações globais.";
-                } 
-                if (pergunta.includes("parado") || pergunta.includes("ocioso")) {
-                    return "Identifiquei capital estagnado no almoxarifado (sem movimento há mais de 30 dias). Verifique o card amarelo de 'Ociosidade'.";
-                }
-                return "Meus sensores apontam que seu banco de dados interno está operando perfeitamente. Todos os relatórios de estoque estão em tempo real.";
-            }
-            const isCompra = pergunta.includes("comprar") || pergunta.includes("preço") || pergunta.includes("valor de") || pergunta.includes("oferta") || pergunta.includes("mercado");
-            if (isCompra) {
-                let searchTerm = pergunta.replace(/onde comprar|qual o|preço de|valor de|pesquisar por|busque|comprar|quero|me mostre no|mercado livre|mercado/g, "").trim();
-                if (!searchTerm) searchTerm = "notebook"; 
-                try {
-                    const response = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(searchTerm)}&limit=5`);
-                    const data = await response.json();
-                    if (data.results && data.results.length > 0) {
-                        let html = `Acessei o <b>Mercado Global de Produtos</b> buscando as melhores ofertas para <b>"${searchTerm}"</b> em tempo real:<br><br><div style="display:flex; flex-direction:column; gap:12px;">`;
-                        data.results.forEach(item => {
-                            html += `
-                            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; display:flex; gap:15px; align-items:center; border: 1px solid rgba(255,255,255,0.05);">
-                                <img src="${item.thumbnail}" style="width:60px; height:60px; object-fit:contain; background:#fff; border-radius:8px;">
-                                <div style="flex:1;">
-                                    <strong style="font-size:0.95rem; display:block; color:#e3e3e3;">${item.title}</strong>
-                                    <span style="color: #a8c7fa; font-weight: bold; font-size: 1.1rem;">R$ ${item.price.toFixed(2)}</span>
-                                </div>
-                                <a href="${item.permalink}" target="_blank" style="background: var(--gemini-gradient); color:white; padding:8px 15px; border-radius:20px; text-decoration:none; font-size:0.85rem; font-weight:bold; transition: 0.3s;"><i class="fa fa-shopping-cart"></i> Ver</a>
-                            </div>`;
-                        });
-                        html += `</div>`;
-                        return html;
-                    } else {
-                        return `Vasculhei o banco de dados global de comércio, mas não encontrei nenhum produto correspondente a "${searchTerm}".`;
-                    }
-                } catch (e) {
-                    return `Houve uma interferência na conexão com o banco de dados comercial: ${e.message}`;
-                }
-            }
-            try {
-                let searchTerm = pergunta.replace(/o que é|quem foi|quem é|me fale sobre|explique|pesquise sobre|o que significa/g, "").trim();
-                if (!searchTerm) searchTerm = pergunta;
-                const searchRes = await fetch(`https://pt.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchTerm)}&utf8=&format=json&origin=*`);
-                const searchData = await searchRes.json();
-                if (searchData.query && searchData.query.search && searchData.query.search.length > 0) {
-                    const title = searchData.query.search[0].title;
-                    const summaryRes = await fetch(`https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
-                    const data = await summaryRes.json();
-                    let html = `Extraí esta informação do <b>Banco de Dados Mundial (Knowledge Graph)</b> sobre <b>${data.title}</b>:<br><br>`;
-                    html += `<div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border-left: 4px solid #a8c7fa;">`;
-                    if (data.thumbnail) {
-                        html += `<img src="${data.thumbnail.source}" style="max-width:180px; border-radius:10px; margin-bottom:15px; float:right; margin-left:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">`;
-                    }
-                    html += `<p style="color:#c4c7c5; line-height:1.7; font-size: 1rem;">${data.extract}</p>`;
-                    html += `<div style="clear:both;"></div><br><a href="${data.content_urls.desktop.page}" target="_blank" style="color:#a8c7fa; text-decoration:none; font-weight:bold; display:inline-flex; align-items:center; gap:8px;"><i class="fa fa-external-link"></i> Acessar Registro Completo</a>`;
-                    html += `</div>`;
-                    return html;
-                } else {
-                    return `acessei o banco de dados global, mas não localizei registros exatos para "<b>${searchTerm}</b>". Minhas rotinas de pesquisa continuam se expandindo. Tente usar outros termos!`;
-                }
-            } catch (e) {
-                return `Minha conexão neural com o banco de dados mundial sofreu uma interrupção temporária. Tente novamente em alguns instantes.`;
-            }
+
+            return \`Comando "<b>\${perguntaOriginal}</b>" incorreto ou com parâmetros faltando. Digite <b>/ajuda</b>.\`;
         }
     </script>
 </body>
