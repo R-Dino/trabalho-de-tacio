@@ -529,7 +529,7 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
             transition: 0.1s;
             border-left: 2px solid transparent;
         }
-        .suggestion-item:hover {
+        .suggestion-item:hover, .suggestion-item.active {
             background: #3f4147;
             border-left: 2px solid #5865F2;
         }
@@ -620,29 +620,67 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
         const typing = document.getElementById('typingIndicator');
         const suggestionsBox = document.getElementById('commandSuggestions');
 
+        let activeSuggestionIndex = -1;
+        let currentSuggestions = [];
+
         input.addEventListener('input', function() {
+            activeSuggestionIndex = -1;
             const val = this.value.trim().toLowerCase();
             if (val.startsWith('/')) {
                 const match = val.split(' ')[0]; 
-                const filtered = COMMANDS.filter(c => c.cmd.startsWith(match));
-                if (filtered.length > 0) {
-                    let html = '<div class="suggestions-header">Comandos Disponíveis</div>';
-                    html += filtered.map(c => `
-                        <div class="suggestion-item" onclick="selectCommand('${c.cmd}')">
-                            <div class="suggestion-icon"><i class="fa ${c.icon}" style="color: ${c.color};"></i></div>
-                            <div class="suggestion-details">
-                                <span class="suggestion-cmd">${c.cmd}</span>
-                                <span class="suggestion-desc">${c.desc}</span>
-                            </div>
-                        </div>
-                    `).join('');
-                    suggestionsBox.innerHTML = html;
+                currentSuggestions = COMMANDS.filter(c => c.cmd.startsWith(match));
+                if (currentSuggestions.length > 0) {
+                    renderSuggestions();
                     suggestionsBox.style.display = 'flex';
                 } else {
                     suggestionsBox.style.display = 'none';
                 }
             } else {
                 suggestionsBox.style.display = 'none';
+                currentSuggestions = [];
+            }
+        });
+
+        function renderSuggestions() {
+            let html = '<div class="suggestions-header">Comandos Disponíveis</div>';
+            html += currentSuggestions.map((c, index) => `
+                <div class="suggestion-item ${index === activeSuggestionIndex ? 'active' : ''}" onclick="selectCommand('${c.cmd}')" id="sugg-${index}">
+                    <div class="suggestion-icon"><i class="fa ${c.icon}" style="color: ${c.color};"></i></div>
+                    <div class="suggestion-details">
+                        <span class="suggestion-cmd">${c.cmd}</span>
+                        <span class="suggestion-desc">${c.desc}</span>
+                    </div>
+                </div>
+            `).join('');
+            suggestionsBox.innerHTML = html;
+        }
+
+        input.addEventListener('keydown', function(e) {
+            if (suggestionsBox.style.display === 'flex' && currentSuggestions.length > 0) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    activeSuggestionIndex = (activeSuggestionIndex + 1) % currentSuggestions.length;
+                    renderSuggestions();
+                    document.getElementById(`sugg-${activeSuggestionIndex}`).scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    activeSuggestionIndex = (activeSuggestionIndex - 1 + currentSuggestions.length) % currentSuggestions.length;
+                    renderSuggestions();
+                    document.getElementById(`sugg-${activeSuggestionIndex}`).scrollIntoView({ block: 'nearest' });
+                } else if (e.key === 'Enter' || e.key === 'Tab') {
+                    if (activeSuggestionIndex >= 0) {
+                        e.preventDefault();
+                        selectCommand(currentSuggestions[activeSuggestionIndex].cmd);
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        suggestionsBox.style.display = 'none';
+                        sendMessage();
+                    }
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                suggestionsBox.style.display = 'none';
+                sendMessage();
             }
         });
 
@@ -650,6 +688,7 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
             input.value = cmd + ' ';
             input.focus();
             suggestionsBox.style.display = 'none';
+            activeSuggestionIndex = -1;
         }
 
         document.addEventListener('click', (e) => {
@@ -658,17 +697,10 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
             }
         });
 
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                suggestionsBox.style.display = 'none';
-                sendMessage();
-            }
-        });
-
         function sendMessage() {
             const text = input.value.trim();
             if(!text) return;
+            suggestionsBox.style.display = 'none';
             addMessage(text, 'user');
             input.value = '';
             chat.appendChild(typing);
