@@ -287,6 +287,8 @@ if ($totalFornecedores == 0) {
         'mensagem' => "Notei que você não possui fornecedores cadastrados. O cadastro de fornecedores é vital para que eu possa gerar pedidos de compra automáticos no futuro."
     ];
 }
+$stmtComandos = $pdo->query("SELECT comando as cmd, descricao as `desc`, icone as icon, cor FROM ia_comandos ORDER BY comando ASC");
+$comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -611,28 +613,7 @@ if ($totalFornecedores == 0) {
         </div>
     </main>
     <script>
-        const COMMANDS = [
-            { cmd: '/ajuda', desc: 'Ver todos os comandos disponíveis', icon: 'fa-question-circle', color: '#a8c7fa' },
-            { cmd: '/adicionar', desc: '[qtd] [produto] - Dá entrada no estoque', icon: 'fa-plus-circle', color: '#10b981' },
-            { cmd: '/remover', desc: '[qtd] [produto] - Dá saída no estoque', icon: 'fa-minus-circle', color: '#ef4444' },
-            { cmd: '/banir', desc: '[usuario] - Bane um usuário do sistema', icon: 'fa-gavel', color: '#ef4444' },
-            { cmd: '/desbanir', desc: '[usuario] - Retira o ban', icon: 'fa-unlock', color: '#10b981' },
-            { cmd: '/promover', desc: '[usuario] - Dá cargo de admin', icon: 'fa-star', color: '#f59e0b' },
-            { cmd: '/rebaixar', desc: '[usuario] - Remove cargo de admin', icon: 'fa-arrow-down', color: '#ef4444' },
-            { cmd: '/usuarios', desc: 'Lista todos os usuários', icon: 'fa-users', color: '#3b82f6' },
-            { cmd: '/deletar', desc: '[produto] - Exclui o produto', icon: 'fa-trash', color: '#ef4444' },
-            { cmd: '/valor', desc: 'Mostra o valor total em estoque', icon: 'fa-dollar-sign', color: '#10b981' },
-            { cmd: '/vendidos', desc: 'Total de itens já saíram', icon: 'fa-chart-line', color: '#3b82f6' },
-            { cmd: '/estoque', desc: '[produto] - Verifica a quantidade', icon: 'fa-box', color: '#f59e0b' },
-            { cmd: '/entradas', desc: 'Últimas 5 entradas', icon: 'fa-arrow-right-to-bracket', color: '#10b981' },
-            { cmd: '/saidas', desc: 'Últimas 5 saídas', icon: 'fa-arrow-right-from-bracket', color: '#ef4444' },
-            { cmd: '/fornecedores', desc: 'Lista de fornecedores', icon: 'fa-truck', color: '#a8c7fa' },
-            { cmd: '/comprar', desc: '[produto] - Pesquisa no Mercado Livre', icon: 'fa-shopping-cart', color: '#f59e0b' },
-            { cmd: '/pesquisar', desc: '[termo] - Pesquisa na Wikipedia', icon: 'fa-globe', color: '#a8c7fa' },
-            { cmd: '/limpar', desc: 'Limpa o histórico do terminal atual', icon: 'fa-eraser', color: '#94a3b8' },
-            { cmd: '/dashboard', desc: 'Abre o Painel Principal', icon: 'fa-chart-line', color: '#10b981' },
-            { cmd: '/produtos', desc: 'Abre a página de Produtos', icon: 'fa-box', color: '#3b82f6' }
-        ];
+        const COMMANDS = <?php echo json_encode($comandos_db, JSON_UNESCAPED_UNICODE); ?>;
 
         const input = document.getElementById('userInput');
         const chat = document.getElementById('chatMessages');
