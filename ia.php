@@ -60,9 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $response['handled'] = true;
     }
     elseif (preg_match('/^\/banir\s+(.+)/i', $pergunta, $matches)) {
-        $nome = trim($matches[1]);
-        $stmt = $pdo->prepare("SELECT id, nome, status FROM usuarios WHERE nome LIKE ?");
-        $stmt->execute(["%$nome%"]);
+        $termo = trim($matches[1]);
+        $stmt = $pdo->prepare("SELECT id, nome, status FROM usuarios WHERE id = ? OR email = ? OR nome LIKE ? LIMIT 1");
+        $stmt->execute([$termo, $termo, "%$termo%"]);
         $user = $stmt->fetch();
         if ($user) {
             if ($user['id'] == $_SESSION['usuario_id']) {
@@ -72,40 +72,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $response['html'] = "<b><i class='fa fa-gavel' style='color:#ef4444;'></i> BAN HAMMER!</b> O usuário <b>{$user['nome']}</b> foi banido.";
             }
         } else {
-            $response['html'] = "Usuário '$nome' não encontrado.";
+            $response['html'] = "Usuário '$termo' não encontrado.";
         }
         $response['handled'] = true;
     }
     elseif (preg_match('/^\/desbanir\s+(.+)/i', $pergunta, $matches)) {
-        $nome = trim($matches[1]);
-        $stmt = $pdo->prepare("SELECT id, nome, status FROM usuarios WHERE nome LIKE ?");
-        $stmt->execute(["%$nome%"]);
+        $termo = trim($matches[1]);
+        $stmt = $pdo->prepare("SELECT id, nome, status FROM usuarios WHERE id = ? OR email = ? OR nome LIKE ? LIMIT 1");
+        $stmt->execute([$termo, $termo, "%$termo%"]);
         $user = $stmt->fetch();
         if ($user) {
             $pdo->prepare("UPDATE usuarios SET status = 'ativo' WHERE id = ?")->execute([$user['id']]);
             $response['html'] = "<b><i class='fa fa-unlock' style='color:#10b981;'></i> UNBANNED!</b> O usuário <b>{$user['nome']}</b> foi desbanido.";
         } else {
-            $response['html'] = "Usuário '$nome' não encontrado.";
+            $response['html'] = "Usuário '$termo' não encontrado.";
         }
         $response['handled'] = true;
     }
     elseif (preg_match('/^\/promover\s+(.+)/i', $pergunta, $matches)) {
-        $nome = trim($matches[1]);
-        $stmt = $pdo->prepare("SELECT id, nome FROM usuarios WHERE nome LIKE ?");
-        $stmt->execute(["%$nome%"]);
+        $termo = trim($matches[1]);
+        $stmt = $pdo->prepare("SELECT id, nome FROM usuarios WHERE id = ? OR email = ? OR nome LIKE ? LIMIT 1");
+        $stmt->execute([$termo, $termo, "%$termo%"]);
         $user = $stmt->fetch();
         if ($user) {
             $pdo->prepare("UPDATE usuarios SET nivel_acesso = 'admin' WHERE id = ?")->execute([$user['id']]);
             $response['html'] = "<b><i class='fa fa-star' style='color:#f59e0b;'></i> PROMOVIDO!</b> O usuário <b>{$user['nome']}</b> agora é Admin.";
         } else {
-            $response['html'] = "Usuário '$nome' não encontrado.";
+            $response['html'] = "Usuário '$termo' não encontrado.";
         }
         $response['handled'] = true;
     }
     elseif (preg_match('/^\/rebaixar\s+(.+)/i', $pergunta, $matches)) {
-        $nome = trim($matches[1]);
-        $stmt = $pdo->prepare("SELECT id, nome FROM usuarios WHERE nome LIKE ?");
-        $stmt->execute(["%$nome%"]);
+        $termo = trim($matches[1]);
+        $stmt = $pdo->prepare("SELECT id, nome FROM usuarios WHERE id = ? OR email = ? OR nome LIKE ? LIMIT 1");
+        $stmt->execute([$termo, $termo, "%$termo%"]);
         $user = $stmt->fetch();
         if ($user) {
             if ($user['id'] == $_SESSION['usuario_id']) {
@@ -115,18 +115,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $response['html'] = "<b><i class='fa fa-arrow-down' style='color:#ef4444;'></i> REBAIXADO!</b> O usuário <b>{$user['nome']}</b> voltou a ser Usuário Comum.";
             }
         } else {
-            $response['html'] = "Usuário '$nome' não encontrado.";
+            $response['html'] = "Usuário '$termo' não encontrado.";
         }
         $response['handled'] = true;
     }
     elseif (strpos($pergunta, '/usuarios') === 0) {
-        $stmt = $pdo->query("SELECT nome, nivel_acesso, status FROM usuarios");
+        $stmt = $pdo->query("SELECT id, nome, email, nivel_acesso, status FROM usuarios");
         $users = $stmt->fetchAll();
         $html = "<b><i class='fa fa-users'></i> Jogadores no Servidor:</b><br><ul style='margin-top:10px; padding-left:20px;'>";
         foreach($users as $u) {
             $corStatus = $u['status'] == 'banido' ? '#ef4444' : '#10b981';
             $nivel = $u['nivel_acesso'] == 'admin' ? '[ADMIN]' : '[COMUM]';
-            $html .= "<li style='margin-bottom:5px;'><span style='color:#a8c7fa'>$nivel</span> <b>{$u['nome']}</b> - <span style='color:$corStatus; font-size:0.8rem; font-weight:bold;'>".strtoupper($u['status'])."</span></li>";
+            $emailInfo = !empty($u['email']) ? $u['email'] : 'Sem email';
+            $html .= "<li style='margin-bottom:5px;'><span style='color:#a8c7fa'>$nivel</span> <b>{$u['nome']}</b> <small style='color:#94a3b8;'>(ID: {$u['id']} | $emailInfo)</small> - <span style='color:$corStatus; font-size:0.8rem; font-weight:bold;'>".strtoupper($u['status'])."</span></li>";
         }
         $html .= "</ul>";
         $response['html'] = $html;
@@ -145,6 +146,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         } else {
             $response['html'] = "Produto '$nome' não encontrado ou inespecífico.";
         }
+        $response['handled'] = true;
+    }
+    elseif (strpos($pergunta, '/alertas') === 0) {
+        $stmt = $pdo->query("SELECT nome, quantidade, status FROM produtos WHERE status IN ('Baixo', 'Zerado') ORDER BY quantidade ASC");
+        $alertas = $stmt->fetchAll();
+        if (count($alertas) > 0) {
+            $html = "<b><i class='fa fa-exclamation-triangle' style='color:#ef4444;'></i> Alertas de Estoque:</b><br><ul style='margin-top:10px; padding-left:20px;'>";
+            foreach($alertas as $a) {
+                $cor = $a['status'] == 'Zerado' ? '#ef4444' : '#f59e0b';
+                $html .= "<li style='margin-bottom:5px;'>{$a['nome']} - <span style='color:$cor; font-weight:bold;'>{$a['quantidade']} unidades ({$a['status']})</span></li>";
+            }
+            $html .= "</ul>";
+            $response['html'] = $html;
+        } else {
+            $response['html'] = "<b><i class='fa fa-check-circle' style='color:#10b981;'></i> Tudo OK!</b> Não há produtos com estoque baixo ou zerado no momento.";
+        }
+        $response['handled'] = true;
+    }
+    elseif (preg_match('/^\/historico\s+(.+)/i', $pergunta, $matches)) {
+        $produto = trim($matches[1]);
+        $stmt = $pdo->prepare("SELECT id, nome FROM produtos WHERE nome LIKE ? LIMIT 1");
+        $stmt->execute(["%$produto%"]);
+        $p = $stmt->fetch();
+        if ($p) {
+            $movs = $pdo->prepare("SELECT tipo, quantidade, usuario, data_movimentacao FROM movimentacoes WHERE produto_id = ? ORDER BY data_movimentacao DESC LIMIT 5");
+            $movs->execute([$p['id']]);
+            $resultados = $movs->fetchAll();
+            
+            if (count($resultados) > 0) {
+                $html = "Histórico recente de <b>{$p['nome']}</b>:<br><br>";
+                foreach($resultados as $m) {
+                    $cor = $m['tipo'] == 'Entrada' ? '#10b981' : '#ef4444';
+                    $sinal = $m['tipo'] == 'Entrada' ? '+' : '-';
+                    $data = date('d/m/Y H:i', strtotime($m['data_movimentacao']));
+                    $html .= "<div style='background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; border-left:3px solid $cor; margin-bottom:8px;'><b>$sinal{$m['quantidade']}x</b> via {$m['usuario']}<br><small style='color:#a8c7fa;'>em $data</small></div>";
+                }
+                $response['html'] = $html;
+            } else {
+                $response['html'] = "O produto <b>{$p['nome']}</b> ainda não possui movimentações.";
+            }
+        } else {
+            $response['html'] = "Produto '$produto' não encontrado.";
+        }
+        $response['handled'] = true;
+    }
+    elseif (strpos($pergunta, '/status') === 0) {
+        $totalProd = $pdo->query("SELECT COUNT(*) FROM produtos")->fetchColumn();
+        $totalValor = $pdo->query("SELECT SUM(quantidade * preco) FROM produtos")->fetchColumn();
+        $totalBaixo = $pdo->query("SELECT COUNT(*) FROM produtos WHERE status = 'Baixo'")->fetchColumn();
+        $totalZerado = $pdo->query("SELECT COUNT(*) FROM produtos WHERE status = 'Zerado'")->fetchColumn();
+        
+        $response['html'] = "<b><i class='fa fa-server' style='color:#a8c7fa;'></i> Status do Sistema:</b><br><br>
+        • <b>Total de Produtos:</b> $totalProd cadastrados<br>
+        • <b>Valor em Estoque:</b> R$ " . number_format($totalValor ?: 0, 2, ',', '.') . "<br>
+        • <b>Estoque Baixo:</b> <span style='color:#f59e0b;'>$totalBaixo item(ns)</span><br>
+        • <b>Estoque Zerado:</b> <span style='color:#ef4444;'>$totalZerado item(ns)</span><br>";
         $response['handled'] = true;
     }
     elseif (strpos($pergunta, '/vendidos') === 0) {
@@ -760,6 +817,8 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
                 • <b>/usuarios</b><br>
                 • <b>/deletar [produto]</b><br>
                 • <b>/estoque [produto]</b><br>
+                • <b>/historico [produto]</b><br>
+                • <b>/alertas</b> | <b>/status</b><br>
                 • <b>/valor</b> | <b>/vendidos</b> | <b>/entradas</b> | <b>/saidas</b> | <b>/fornecedores</b><br>
                 • <b>/comprar [produto]</b> (Mercado Livre)<br>
                 • <b>/pesquisar [termo]</b> (Wikipedia)<br>`;
