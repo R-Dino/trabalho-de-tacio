@@ -4,7 +4,11 @@
 body {
     font-family: 'Inter', sans-serif;
 }
-button, input, select, textarea {
+
+button,
+input,
+select,
+textarea {
     font-family: inherit;
 }
 

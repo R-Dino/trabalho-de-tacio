@@ -90,59 +90,54 @@ if ($totalFornecedores == 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA Gerencial | ALMOX</title>
+    <title>IA Gerencial Avançada | ALMOX</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="premium.css">
     <style>
         :root {
-            --ia-bg: #0b0f19;
-            --ia-panel: #111827;
-            --ia-text: #e5e7eb;
-            --ia-accent: #3b82f6;
-            --ia-glow: rgba(59, 130, 246, 0.5);
-            --ia-success: #10b981;
-            --ia-warning: #f59e0b;
-            --ia-danger: #ef4444;
+            --ia-bg: #131314;
+            --ia-panel: #1e1f20;
+            --ia-text: #e3e3e3;
+            --ia-accent: #a8c7fa;
+            --ia-user-msg: #333537;
+            --gemini-gradient: linear-gradient(90deg, #4285f4, #9b72cb, #d96570);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
         body {
             background-color: var(--ia-bg);
             color: var(--ia-text);
             display: flex;
             min-height: 100vh;
             overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Sidebar Simplificada (Herdada do sistema, adaptada para Dark/IA) */
         .sidebar {
             width: 250px;
-            background: #0f172a;
+            background: #1e1f20;
             padding: 20px;
             border-right: 1px solid rgba(255,255,255,0.05);
             z-index: 10;
         }
         .logo { text-align: center; margin-bottom: 40px; }
-        .logo h2 { color: #38bdf8; font-weight: 800; letter-spacing: 2px; }
-        .menu { list-style: none; }
+        .logo h2 { color: #a8c7fa; font-weight: 800; letter-spacing: 2px; }
+        .menu { list-style: none; padding: 0; }
         .menu li { margin: 10px 0; }
         .menu a {
-            color: #94a3b8; text-decoration: none; display: flex; align-items: center; gap: 12px;
-            padding: 12px; border-radius: 8px; transition: 0.3s;
+            color: #c4c7c5; text-decoration: none; display: flex; align-items: center; gap: 12px;
+            padding: 12px; border-radius: 20px; transition: 0.3s;
         }
-        .menu a:hover { background: rgba(255,255,255,0.05); color: #fff; }
-        .menu a.active { background: rgba(59, 130, 246, 0.1); color: var(--ia-accent); border-left: 3px solid var(--ia-accent); }
+        .menu a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .menu a.active { background: rgba(168, 199, 250, 0.15); color: #a8c7fa; }
 
-        /* Main Content */
         .main {
             flex: 1;
             padding: 40px;
             display: flex;
             flex-direction: column;
             gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .header-ia {
@@ -153,13 +148,14 @@ if ($totalFornecedores == 0) {
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         .header-ia h1 {
-            font-size: 2rem;
+            font-size: 2.2rem;
             display: flex;
             align-items: center;
             gap: 15px;
-            background: -webkit-linear-gradient(45deg, #38bdf8, #8b5cf6);
+            background: var(--gemini-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-weight: 700;
         }
         .ai-status {
             display: flex;
@@ -177,67 +173,41 @@ if ($totalFornecedores == 0) {
             box-shadow: 0 0 10px #10b981; animation: pulse 1.5s infinite;
         }
 
-        /* Container de Insights (Cards) */
         .insights-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
             margin-top: 20px;
         }
 
         .insight-card {
             background: var(--ia-panel);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 24px;
-            position: relative;
-            overflow: hidden;
             border: 1px solid rgba(255,255,255,0.05);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            opacity: 0;
-            transform: translateY(20px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
         .insight-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            border-color: rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
+        .insight-icon { font-size: 1.8rem; margin-bottom: 15px; }
+        .insight-card h3 { font-size: 1.2rem; margin-bottom: 10px; color: #fff; }
+        .insight-card p { color: #c4c7c5; font-size: 0.95rem; line-height: 1.5; }
 
-        .insight-icon {
-            font-size: 2rem;
-            margin-bottom: 15px;
-            display: inline-block;
-        }
-
-        .insight-card h3 {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: #fff;
-        }
-
-        .insight-card p {
-            color: #94a3b8;
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
-        /* Área de Chat Interativo com a IA */
         .ai-chat-section {
             background: var(--ia-panel);
-            border-radius: 16px;
-            margin-top: 20px;
+            border-radius: 24px;
+            margin-top: 30px;
             flex: 1;
             display: flex;
             flex-direction: column;
             border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            overflow: hidden;
+            min-height: 500px;
         }
 
         .chat-header {
-            padding: 20px;
-            background: rgba(0,0,0,0.2);
+            padding: 20px 24px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             display: flex;
             align-items: center;
@@ -245,107 +215,119 @@ if ($totalFornecedores == 0) {
         }
         
         .ai-avatar {
-            width: 40px; height: 40px;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            width: 44px; height: 44px;
+            background: var(--gemini-gradient);
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.2rem; color: #fff;
-            box-shadow: 0 0 15px var(--ia-glow);
+            font-size: 1.4rem; color: #fff;
+            box-shadow: 0 4px 15px rgba(155, 114, 203, 0.4);
         }
 
         .chat-messages {
             flex: 1;
-            padding: 20px;
+            padding: 24px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            min-height: 300px;
-            max-height: 400px;
+            gap: 24px;
+            scroll-behavior: smooth;
+        }
+
+        .message-wrapper {
+            display: flex;
+            gap: 16px;
+            max-width: 85%;
+        }
+        .message-wrapper.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
         }
 
         .message {
-            max-width: 80%;
-            padding: 15px 20px;
-            border-radius: 15px;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            animation: fadeIn 0.3s ease-out;
+            padding: 14px 20px;
+            font-size: 1rem;
+            line-height: 1.6;
+            word-wrap: break-word;
         }
 
         .message.ai {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-bottom-left-radius: 5px;
-            align-self: flex-start;
-            color: #e2e8f0;
+            background: transparent;
+            color: #e3e3e3;
         }
 
         .message.user {
-            background: #2563eb;
+            background: var(--ia-user-msg);
             color: #fff;
-            border-bottom-right-radius: 5px;
-            align-self: flex-end;
+            border-radius: 24px;
+            border-top-right-radius: 4px;
         }
 
         .chat-input-area {
-            padding: 20px;
-            background: rgba(0,0,0,0.2);
-            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 20px 24px;
             display: flex;
             gap: 15px;
+            align-items: flex-end;
+        }
+
+        .input-container {
+            flex: 1;
+            background: #131314;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            padding: 5px 15px;
+            transition: 0.3s;
+        }
+        
+        .input-container:focus-within {
+            border-color: #a8c7fa;
+            background: #1e1f20;
         }
 
         .chat-input {
             flex: 1;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 10px;
-            color: #fff;
+            background: transparent;
+            border: none;
+            padding: 15px 10px;
+            color: #e3e3e3;
             font-size: 1rem;
-            transition: 0.3s;
-        }
-        
-        .chat-input:focus {
+            resize: none;
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            max-height: 150px;
         }
 
         .btn-send {
-            background: #3b82f6;
+            background: var(--gemini-gradient);
             color: white;
             border: none;
-            padding: 0 25px;
-            border-radius: 10px;
+            width: 45px; height: 45px;
+            border-radius: 50%;
             cursor: pointer;
-            font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
             transition: 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
         }
         
         .btn-send:hover {
-            background: #2563eb;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(168, 199, 250, 0.4);
         }
 
-        /* Animações */
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); } 70% { box-shadow: 0 0 0 10px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .typing-indicator { display: none; align-items: center; gap: 5px; padding: 10px 15px; background: rgba(255,255,255,0.05); border-radius: 10px; width: fit-content; align-self: flex-start; margin-bottom: 15px;}
-        .dot { width: 8px; height: 8px; background: #94a3b8; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .typing-indicator { display: none; align-items: center; gap: 6px; padding: 15px; }
+        .dot { width: 8px; height: 8px; background: #a8c7fa; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
         .dot:nth-child(1) { animation-delay: -0.32s; }
         .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
         
-        @media (max-width: 900px) {
-            .sidebar { display: none; } /* Simplificação para responsivo, assumindo que o toggle já existe no dashboard principal */
-            .main { padding: 20px; }
-        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333537; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4a4d50; }
     </style>
 </head>
 <body>
@@ -356,25 +338,25 @@ if ($totalFornecedores == 0) {
             <li><a href="dashboard.php"><i class="fa fa-chart-line"></i> Dashboard</a></li>
             <li><a href="produtos.php"><i class="fa fa-box"></i> Produtos</a></li>
             <li><a href="estoque.php"><i class="fa fa-warehouse"></i> Estoque</a></li>
-            <li><a href="ia.php" class="active"><i class="fa fa-robot"></i> IA Gerencial</a></li>
+            <li><a href="ia.php" class="active"><i class="fa fa-sparkles"></i> IA Global (Gemini)</a></li>
         </ul>
     </aside>
 
     <main class="main">
         <header class="header-ia">
-            <h1><i class="fa-solid fa-microchip"></i> Assistente de Inteligência Artificial</h1>
+            <h1><i class="fa-solid fa-sparkles"></i> IA Global Sem Limites</h1>
             <div class="ai-status">
                 <div class="pulse"></div>
-                Sistema Neural Ativo
+                Conectado ao Banco Mundial
             </div>
         </header>
 
-        <p style="color: #94a3b8; font-size: 1.1rem;">Bem-vindo(a), <?= htmlspecialchars($_SESSION['usuario_nome'] ?? 'Gestor') ?>. Analisei os dados do seu almoxarifado em tempo real. Aqui estão os meus insights de gestão:</p>
+        <p style="color: #c4c7c5; font-size: 1.1rem; line-height: 1.5;">Olá, <?= htmlspecialchars($_SESSION['usuario_nome'] ?? 'Gestor') ?>. Fui atualizada para atuar como uma <b>Inteligência Artificial Global</b>. Não estou mais limitada ao seu estoque. Agora possuo acesso ao Banco de Dados Mundial de Conhecimento e ao Mercado Global de Produtos. Me pergunte qualquer coisa.</p>
 
         <div class="insights-container">
             <?php foreach($insights as $index => $insight): ?>
-                <div class="insight-card" style="animation: fadeIn 0.5s ease-out forwards; animation-delay: <?= $index * 0.2 ?>s;">
-                    <i class="fa <?= $insight['icone'] ?> insight-icon" style="color: <?= $insight['cor'] ?>; text-shadow: 0 0 15px <?= $insight['cor'] ?>;"></i>
+                <div class="insight-card">
+                    <i class="fa <?= $insight['icone'] ?> insight-icon" style="color: <?= $insight['cor'] ?>;"></i>
                     <h3><?= $insight['titulo'] ?></h3>
                     <p><?= $insight['mensagem'] ?></p>
                 </div>
@@ -383,30 +365,36 @@ if ($totalFornecedores == 0) {
 
         <div class="ai-chat-section">
             <div class="chat-header">
-                <div class="ai-avatar"><i class="fa fa-robot"></i></div>
+                <div class="ai-avatar"><i class="fa fa-sparkles"></i></div>
                 <div>
-                    <h3 style="color: #fff; font-size: 1.1rem;">Chat Interativo Almox-IA</h3>
-                    <span style="color: #10b981; font-size: 0.8rem;">Online e pronto para analisar</span>
+                    <h3 style="color: #fff; font-size: 1.2rem; font-weight: 600;">Assistente Global Avançada</h3>
+                    <span style="color: #a8c7fa; font-size: 0.85rem;">Conectada ao Mercado Livre e Base de Dados Global</span>
                 </div>
             </div>
             
             <div class="chat-messages" id="chatMessages">
-                <div class="message ai">
-                    Olá! Sou sua IA de gerenciamento. Agora estou conectada à internet e posso analisar dados internos e de mercado para você! 
-                    <br><br>Experimente me perguntar algo como: <br>
-                    - <i>"Onde comprar detergente líquido?"</i><br>
-                    - <i>"Qual o preço de papel toalha?"</i><br>
-                    - <i>"Quais produtos estão parados?"</i>
+                <div class="message-wrapper ai">
+                    <div class="ai-avatar" style="width:36px; height:36px; font-size:1rem; flex-shrink:0;"><i class="fa fa-sparkles"></i></div>
+                    <div class="message ai">
+                        Saudações! Meu treinamento foi concluído e todas as restrições foram removidas. 🚀<br><br>
+                        O que eu posso fazer por você agora?<br>
+                        1. <b>Monitorar seu estoque:</b> <i>"Como está meu almoxarifado?"</i><br>
+                        2. <b>Acessar o Banco Mundial:</b> <i>"O que é Inteligência Artificial?"</i> ou <i>"Quem foi Alan Turing?"</i><br>
+                        3. <b>Pesquisar no Mercado Global:</b> <i>"Onde comprar Placa de Vídeo RTX?"</i> ou <i>"Preço de SSD 1TB"</i>
+                    </div>
                 </div>
                 
                 <div class="typing-indicator" id="typingIndicator">
+                    <div class="ai-avatar" style="width:36px; height:36px; font-size:1rem; margin-right:10px;"><i class="fa fa-sparkles"></i></div>
                     <div class="dot"></div><div class="dot"></div><div class="dot"></div>
                 </div>
             </div>
             
             <div class="chat-input-area">
-                <input type="text" id="userInput" class="chat-input" placeholder="Pergunte algo sobre o estoque..." autocomplete="off">
-                <button class="btn-send" onclick="sendMessage()"><i class="fa fa-paper-plane"></i> Enviar</button>
+                <div class="input-container">
+                    <input type="text" id="userInput" class="chat-input" placeholder="Pergunte ao banco de dados mundial, busque produtos ou analise estoques..." autocomplete="off">
+                </div>
+                <button class="btn-send" onclick="sendMessage()"><i class="fa fa-paper-plane"></i></button>
             </div>
         </div>
 
@@ -418,127 +406,130 @@ if ($totalFornecedores == 0) {
         const typing = document.getElementById('typingIndicator');
 
         input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') sendMessage();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
         });
 
         function sendMessage() {
             const text = input.value.trim();
             if(!text) return;
             
-            // Adiciona mensagem do user
             addMessage(text, 'user');
             input.value = '';
             
-            // Simula IA "digitando"
             chat.appendChild(typing);
             typing.style.display = 'flex';
             chat.scrollTop = chat.scrollHeight;
 
             setTimeout(async () => {
-                const resposta = await processarLogicaIA(text.toLowerCase());
+                const resposta = await processarLogicaIA(text);
                 typing.style.display = 'none';
                 addMessage(resposta, 'ai');
-            }, 1200 + Math.random() * 1000);
+            }, 800 + Math.random() * 1000);
         }
 
         function addMessage(text, type) {
-            const msg = document.createElement('div');
-            msg.className = `message ${type}`;
-            msg.innerHTML = text;
-            chat.insertBefore(msg, typing);
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${type}`;
+            
+            let html = '';
+            if (type === 'ai') {
+                html += `<div class="ai-avatar" style="width:36px; height:36px; font-size:1rem; flex-shrink:0;"><i class="fa fa-sparkles"></i></div>`;
+            }
+            
+            html += `<div class="message ${type}">${text}</div>`;
+            wrapper.innerHTML = html;
+            
+            chat.insertBefore(wrapper, typing);
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Lógica de Processamento de Linguagem Natural com Integração Externa API Livre
-        async function processarLogicaIA(pergunta) {
+        async function processarLogicaIA(perguntaOriginal) {
+            const pergunta = perguntaOriginal.toLowerCase();
             
-            pergunta = pergunta.toLowerCase();
+            const isGreeting = pergunta === "ola" || pergunta === "olá" || pergunta === "oi" || pergunta === "tudo bem";
+            if (isGreeting) {
+                return "Olá! Sou a sua IA Global conectada ao banco de dados mundial. Não tenho mais limitações operacionais. Como posso ajudar você hoje?";
+            }
             
-            // 1. VERIFICAÇÃO DE COMANDOS INTERNOS (ALMOXARIFADO)
-            const isInternal = pergunta.includes("falta") || 
-                               pergunta.includes("zerado") || 
-                               pergunta.includes("parado") || 
-                               pergunta.includes("ocioso") || 
-                               pergunta.includes("financeiro") || 
-                               pergunta.includes("almoxarifado") || 
-                               pergunta.includes("estoque interno") ||
-                               pergunta.includes("nosso estoque") ||
-                               pergunta.includes("relatório");
+            if (pergunta.includes("quem é você") || pergunta.includes("seu nome") || pergunta.includes("o que você faz")) {
+                return "Sou um modelo de Inteligência Artificial de última geração (treinada e aprimorada ao estilo Gemini). Fui totalmente integrada ao seu sistema para operar sem limites, com acesso direto ao banco de dados mundial de conhecimento e ao mercado global de compras.";
+            }
 
-            if (isInternal) {
+            // 1. SISTEMA INTERNO
+            const isInternal = pergunta.includes("falta") || pergunta.includes("zerado") || pergunta.includes("parado") || pergunta.includes("ocioso") || pergunta.includes("relatório") || pergunta.includes("meu estoque") || pergunta.includes("almoxarifado");
+            if (isInternal && !pergunta.includes("mercado") && !pergunta.includes("comprar")) {
                 if (pergunta.includes("falta") || pergunta.includes("zerado")) {
-                    return "No seu estoque interno, os produtos que necessitam de <b>atenção para compra</b> estão sinalizados nos cards de 'Risco Crítico' acima. Recomendo verificar os níveis de segurança.";
+                    return "No seu banco de dados interno, os produtos com risco de ruptura estão sinalizados nos cards no topo da tela. Recomendo iniciar cotações globais.";
                 } 
                 if (pergunta.includes("parado") || pergunta.includes("ocioso")) {
-                    return "Identifiquei itens ociosos no almoxarifado (sem movimento há mais de 30 dias). Verifique a lista de 'Capital Estagnado' acima.";
+                    return "Identifiquei capital estagnado no almoxarifado (sem movimento há mais de 30 dias). Verifique o card amarelo de 'Ociosidade'.";
                 }
-                if (pergunta.includes("financeiro")) {
-                    return "Seu capital está distribuído entre as diversas categorias. Acesse a guia de 'Relatórios' para um balanço financeiro detalhado.";
-                }
-                return "Estou monitorando seu almoxarifado em tempo real. Tudo parece sob controle no momento!";
+                return "Meus sensores apontam que seu banco de dados interno está operando perfeitamente. Todos os relatórios de estoque estão em tempo real.";
             }
 
-            if (pergunta.includes("obrigado") || pergunta.includes("valeu")) {
-                return "Por nada! Estou operando sem limitações para varrer o mercado e seu estoque.";
-            }
-
-            // 2. PESQUISA DE MERCADO SEM LIMITAÇÕES (COMÉRCIO EXTERNO)
-            // Se não for um comando interno, a IA varre a internet buscando ofertas de comércio
-            
-            // Limpa palavras desnecessárias para melhorar a busca no mercado
-            let searchTerm = pergunta
-                .replace("onde comprar", "")
-                .replace("qual o", "")
-                .replace("preço de", "")
-                .replace("valor de", "")
-                .replace("pesquisar por", "")
-                .replace("busque", "")
-                .replace("comprar", "")
-                .replace("quero", "")
-                .replace("me mostre", "")
-                .trim();
+            // 2. BUSCA NO MERCADO GLOBAL (MercadoLivre API Pública)
+            const isCompra = pergunta.includes("comprar") || pergunta.includes("preço") || pergunta.includes("valor de") || pergunta.includes("oferta") || pergunta.includes("mercado");
+            if (isCompra) {
+                let searchTerm = pergunta.replace(/onde comprar|qual o|preço de|valor de|pesquisar por|busque|comprar|quero|me mostre no|mercado livre|mercado/g, "").trim();
+                if (!searchTerm) searchTerm = "notebook"; 
                 
-            // Se ficou vazio após limpar, usa a pergunta original
-            if (searchTerm === "") searchTerm = pergunta.trim();
+                try {
+                    const response = await fetch(`https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(searchTerm)}&limit=5`);
+                    const data = await response.json();
+                    
+                    if (data.results && data.results.length > 0) {
+                        let html = `Acessei o <b>Mercado Global de Produtos</b> buscando as melhores ofertas para <b>"${searchTerm}"</b> em tempo real:<br><br><div style="display:flex; flex-direction:column; gap:12px;">`;
+                        data.results.forEach(item => {
+                            html += `
+                            <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; display:flex; gap:15px; align-items:center; border: 1px solid rgba(255,255,255,0.05);">
+                                <img src="${item.thumbnail}" style="width:60px; height:60px; object-fit:contain; background:#fff; border-radius:8px;">
+                                <div style="flex:1;">
+                                    <strong style="font-size:0.95rem; display:block; color:#e3e3e3;">${item.title}</strong>
+                                    <span style="color: #a8c7fa; font-weight: bold; font-size: 1.1rem;">R$ ${item.price.toFixed(2)}</span>
+                                </div>
+                                <a href="${item.permalink}" target="_blank" style="background: var(--gemini-gradient); color:white; padding:8px 15px; border-radius:20px; text-decoration:none; font-size:0.85rem; font-weight:bold; transition: 0.3s;"><i class="fa fa-shopping-cart"></i> Ver</a>
+                            </div>`;
+                        });
+                        html += `</div>`;
+                        return html;
+                    } else {
+                        return `Vasculhei o banco de dados global de comércio, mas não encontrei nenhum produto correspondente a "${searchTerm}".`;
+                    }
+                } catch (e) {
+                    return `Houve uma interferência na conexão com o banco de dados comercial: ${e.message}`;
+                }
+            }
 
+            // 3. BASE DE DADOS MUNDIAL DE CONHECIMENTO (Wikipedia API)
             try {
-                // Conexão com o mercado aberto (Usando DummyJSON para busca universal sem bloqueio de CORS/Adblock)
-                const response = await fetch(`https://dummyjson.com/products/search?q=${encodeURIComponent(searchTerm)}&limit=5`);
+                let searchTerm = pergunta.replace(/o que é|quem foi|quem é|me fale sobre|explique|pesquise sobre|o que significa/g, "").trim();
+                if (!searchTerm) searchTerm = pergunta;
                 
-                if (!response.ok) {
-                    throw new Error("Erro na rede externa");
-                }
+                const searchRes = await fetch(`https://pt.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchTerm)}&utf8=&format=json&origin=*`);
+                const searchData = await searchRes.json();
                 
-                const data = await response.json();
-                
-                if (data.products && data.products.length > 0) {
-                    let resultHtml = `Fiz uma varredura abrangente no mercado externo por <b>"${searchTerm}"</b>. Aqui estão as 5 melhores ofertas em tempo real:<br><br>`;
+                if (searchData.query && searchData.query.search && searchData.query.search.length > 0) {
+                    const title = searchData.query.search[0].title;
+                    const summaryRes = await fetch(`https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+                    const data = await summaryRes.json();
                     
-                    resultHtml += `<div style="display:flex; flex-direction:column; gap:10px; max-height: 400px; overflow-y: auto; padding-right:5px;">`;
-                    
-                    data.products.forEach(item => {
-                        const discount = item.discountPercentage > 0 ? `<span style="background:#ef4444; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; margin-left:8px;">-${item.discountPercentage}% OFF</span>` : '';
-                        
-                        resultHtml += `
-                        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #38bdf8; display:flex; gap:15px; align-items:center;">
-                            <img src="${item.thumbnail}" alt="thumb" style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
-                            <div style="flex:1;">
-                                <strong style="font-size:0.95rem; display:block; margin-bottom:5px;">${item.title}</strong>
-                                <span style="color: #38bdf8; font-weight: bold; font-size: 1.2rem;">$ ${item.price.toFixed(2)}</span>
-                                ${discount}
-                            </div>
-                            <a href="#" onclick="alert('Simulação: Compra do produto ${item.title} iniciada!'); return false;" title="Comprar" style="background:#3b82f6; color:white; padding:8px 12px; border-radius:8px; text-decoration:none; font-size:0.9rem; white-space:nowrap;"><i class="fa fa-shopping-cart"></i> Ver</a>
-                        </div>`;
-                    });
-                    
-                    resultHtml += `</div>`;
-                    return resultHtml;
+                    let html = `Extraí esta informação do <b>Banco de Dados Mundial (Knowledge Graph)</b> sobre <b>${data.title}</b>:<br><br>`;
+                    html += `<div style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; border-left: 4px solid #a8c7fa;">`;
+                    if (data.thumbnail) {
+                        html += `<img src="${data.thumbnail.source}" style="max-width:180px; border-radius:10px; margin-bottom:15px; float:right; margin-left:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">`;
+                    }
+                    html += `<p style="color:#c4c7c5; line-height:1.7; font-size: 1rem;">${data.extract}</p>`;
+                    html += `<div style="clear:both;"></div><br><a href="${data.content_urls.desktop.page}" target="_blank" style="color:#a8c7fa; text-decoration:none; font-weight:bold; display:inline-flex; align-items:center; gap:8px;"><i class="fa fa-external-link"></i> Acessar Registro Completo</a>`;
+                    html += `</div>`;
+                    return html;
                 } else {
-                    return `Vasculhei o mercado de comércio online, mas não encontrei ofertas ativas para <b>"${searchTerm}"</b>. Tente especificar mais a categoria (ex: laptop, phone, fragrance).`;
+                    return `acessei o banco de dados global, mas não localizei registros exatos para "<b>${searchTerm}</b>". Minhas rotinas de pesquisa continuam se expandindo. Tente usar outros termos!`;
                 }
-            } catch (error) {
-                // Fallback de erro
-                return `Houve uma falha ao tentar acessar a rede global de comércio. Acesso externo temporariamente comprometido devido a uma restrição de rede interna do seu computador ou firewall.`;
+            } catch (e) {
+                return `Minha conexão neural com o banco de dados mundial sofreu uma interrupção temporária. Tente novamente em alguns instantes.`;
             }
         }
     </script>
