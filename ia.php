@@ -496,27 +496,66 @@ if ($totalFornecedores == 0) {
 
         .suggestions-box {
             position: absolute;
-            bottom: 100%;
+            bottom: calc(100% + 15px);
             left: 24px;
-            background: var(--ia-panel);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
+            background: #2b2d31;
+            border: 1px solid #1e1f22;
+            border-radius: 8px;
             width: calc(100% - 100px);
-            max-height: 200px;
+            max-height: 350px;
             overflow-y: auto;
             z-index: 100;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            display: none;
+            flex-direction: column;
+            padding: 8px 0;
+        }
+        .suggestions-header {
+            padding: 8px 16px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #b5bac1;
+            letter-spacing: 0.05em;
         }
         .suggestion-item {
-            padding: 10px 15px;
+            padding: 10px 16px;
             cursor: pointer;
-            color: #e3e3e3;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: 0.1s;
+            border-left: 2px solid transparent;
         }
-        .suggestion-item:last-child { border-bottom: none; }
-        .suggestion-item:hover { background: rgba(168, 199, 250, 0.15); color: #a8c7fa; }
+        .suggestion-item:hover {
+            background: #3f4147;
+            border-left: 2px solid #5865F2;
+        }
+        .suggestion-icon {
+            width: 32px;
+            height: 32px;
+            background: #1e1f22;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: #dbdee1;
+        }
+        .suggestion-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .suggestion-cmd {
+            color: #dbdee1;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+        .suggestion-desc {
+            color: #b5bac1;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -573,23 +612,24 @@ if ($totalFornecedores == 0) {
     </main>
     <script>
         const COMMANDS = [
-            { cmd: '/ajuda', desc: 'Ver todos os comandos disponíveis' },
-            { cmd: '/adicionar', desc: '[qtd] [produto] - Dá entrada no estoque' },
-            { cmd: '/remover', desc: '[qtd] [produto] - Dá saída no estoque' },
-            { cmd: '/banir', desc: '[usuario] - Bane um usuário do sistema' },
-            { cmd: '/desbanir', desc: '[usuario] - Retira o ban' },
-            { cmd: '/promover', desc: '[usuario] - Dá cargo de admin' },
-            { cmd: '/rebaixar', desc: '[usuario] - Remove cargo de admin' },
-            { cmd: '/usuarios', desc: 'Lista todos os usuários' },
-            { cmd: '/deletar', desc: '[produto] - Exclui o produto' },
-            { cmd: '/valor', desc: 'Mostra o valor total em estoque' },
-            { cmd: '/vendidos', desc: 'Total de itens já saíram' },
-            { cmd: '/estoque', desc: '[produto] - Verifica a quantidade' },
-            { cmd: '/entradas', desc: 'Últimas 5 entradas' },
-            { cmd: '/saidas', desc: 'Últimas 5 saídas' },
-            { cmd: '/fornecedores', desc: 'Lista de fornecedores' },
-            { cmd: '/comprar', desc: '[produto] - Pesquisa no Mercado Livre' },
-            { cmd: '/pesquisar', desc: '[termo] - Pesquisa na Wikipedia' }
+            { cmd: '/ajuda', desc: 'Ver todos os comandos disponíveis', icon: 'fa-question-circle', color: '#a8c7fa' },
+            { cmd: '/adicionar', desc: '[qtd] [produto] - Dá entrada no estoque', icon: 'fa-plus-circle', color: '#10b981' },
+            { cmd: '/remover', desc: '[qtd] [produto] - Dá saída no estoque', icon: 'fa-minus-circle', color: '#ef4444' },
+            { cmd: '/banir', desc: '[usuario] - Bane um usuário do sistema', icon: 'fa-gavel', color: '#ef4444' },
+            { cmd: '/desbanir', desc: '[usuario] - Retira o ban', icon: 'fa-unlock', color: '#10b981' },
+            { cmd: '/promover', desc: '[usuario] - Dá cargo de admin', icon: 'fa-star', color: '#f59e0b' },
+            { cmd: '/rebaixar', desc: '[usuario] - Remove cargo de admin', icon: 'fa-arrow-down', color: '#ef4444' },
+            { cmd: '/usuarios', desc: 'Lista todos os usuários', icon: 'fa-users', color: '#3b82f6' },
+            { cmd: '/deletar', desc: '[produto] - Exclui o produto', icon: 'fa-trash', color: '#ef4444' },
+            { cmd: '/valor', desc: 'Mostra o valor total em estoque', icon: 'fa-dollar-sign', color: '#10b981' },
+            { cmd: '/vendidos', desc: 'Total de itens já saíram', icon: 'fa-chart-line', color: '#3b82f6' },
+            { cmd: '/estoque', desc: '[produto] - Verifica a quantidade', icon: 'fa-box', color: '#f59e0b' },
+            { cmd: '/entradas', desc: 'Últimas 5 entradas', icon: 'fa-arrow-right-to-bracket', color: '#10b981' },
+            { cmd: '/saidas', desc: 'Últimas 5 saídas', icon: 'fa-arrow-right-from-bracket', color: '#ef4444' },
+            { cmd: '/fornecedores', desc: 'Lista de fornecedores', icon: 'fa-truck', color: '#a8c7fa' },
+            { cmd: '/comprar', desc: '[produto] - Pesquisa no Mercado Livre', icon: 'fa-shopping-cart', color: '#f59e0b' },
+            { cmd: '/pesquisar', desc: '[termo] - Pesquisa na Wikipedia', icon: 'fa-globe', color: '#a8c7fa' },
+            { cmd: '/limpar', desc: 'Limpa o histórico do terminal atual', icon: 'fa-eraser', color: '#94a3b8' }
         ];
 
         const input = document.getElementById('userInput');
@@ -602,9 +642,19 @@ if ($totalFornecedores == 0) {
             if (val.startsWith('/')) {
                 const match = val.split(' ')[0]; 
                 const filtered = COMMANDS.filter(c => c.cmd.startsWith(match));
-                if (filtered.length > 0 && match.length > 0) {
-                    suggestionsBox.innerHTML = filtered.map(c => `<div class="suggestion-item" onclick="selectCommand('${c.cmd}')"><b>${c.cmd}</b> <span style="color:#94a3b8; font-size:0.85rem;">${c.desc}</span></div>`).join('');
-                    suggestionsBox.style.display = 'block';
+                if (filtered.length > 0) {
+                    let html = '<div class="suggestions-header">Comandos Disponíveis</div>';
+                    html += filtered.map(c => `
+                        <div class="suggestion-item" onclick="selectCommand('${c.cmd}')">
+                            <div class="suggestion-icon"><i class="fa ${c.icon}" style="color: ${c.color};"></i></div>
+                            <div class="suggestion-details">
+                                <span class="suggestion-cmd">${c.cmd}</span>
+                                <span class="suggestion-desc">${c.desc}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                    suggestionsBox.innerHTML = html;
+                    suggestionsBox.style.display = 'flex';
                 } else {
                     suggestionsBox.style.display = 'none';
                 }
@@ -663,6 +713,12 @@ if ($totalFornecedores == 0) {
 
         async function processarLogicaIA(perguntaOriginal) {
             const pergunta = perguntaOriginal.toLowerCase().trim();
+
+            if (pergunta === '/limpar') {
+                const msgs = chat.querySelectorAll('.message-wrapper:not(:first-child)');
+                msgs.forEach(m => m.remove());
+                return `Terminal limpo com sucesso.`;
+            }
 
             if (!pergunta.startsWith('/')) {
                 return `Comando inválido. O sistema foi otimizado para funcionar estritamente via comandos. Digite <b>/ajuda</b> para ver a lista completa.`;
