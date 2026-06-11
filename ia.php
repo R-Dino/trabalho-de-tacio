@@ -280,70 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit;
     }
 }
-$insights = [];
-$baixoEstoque = $pdo->query("SELECT nome, quantidade FROM produtos WHERE status IN ('Baixo', 'Zerado')")->fetchAll();
-if (count($baixoEstoque) > 0) {
-    $nomes = implode(", ", array_column($baixoEstoque, 'nome'));
-    $insights[] = [
-        'tipo' => 'alerta',
-        'icone' => 'fa-exclamation-triangle',
-        'cor' => '#ef4444',
-        'titulo' => 'Risco Crítico de Ruptura',
-        'mensagem' => "Identifiquei " . count($baixoEstoque) . " item(s) com estoque perigosamente baixo ou zerado: <b>$nomes</b>. Sugiro a emissão imediata de uma ordem de compra para evitar interrupções operacionais."
-    ];
-} else {
-    $insights[] = [
-        'tipo' => 'sucesso',
-        'icone' => 'fa-check-circle',
-        'cor' => '#10b981',
-        'titulo' => 'Saúde do Estoque Perfeita',
-        'mensagem' => "Analisei seus níveis de estoque e tudo está operando dentro da margem de segurança. Não há itens em estado crítico no momento."
-    ];
-}
-$ociosos = $pdo->query("
-    SELECT p.nome, p.quantidade 
-    FROM produtos p 
-    LEFT JOIN (SELECT produto_id FROM movimentacoes WHERE data_movimentacao >= DATE_SUB(NOW(), INTERVAL 30 DAY)) m ON p.id = m.produto_id 
-    WHERE m.produto_id IS NULL AND p.quantidade > 0 LIMIT 5
-")->fetchAll();
-if (count($ociosos) > 0) {
-    $nomesOciosos = implode(", ", array_column($ociosos, 'nome'));
-    $insights[] = [
-        'tipo' => 'aviso',
-        'icone' => 'fa-box-open',
-        'cor' => '#f59e0b',
-        'titulo' => 'Capital Estagnado (Ociosidade)',
-        'mensagem' => "Detectei capital imobilizado. Os seguintes itens não tiveram <b>nenhuma movimentação nos últimos 30 dias</b>: <b>$nomesOciosos</b>. Considere revisar o estoque mínimo ou criar promoções internas de uso."
-    ];
-}
-$altaRotatividade = $pdo->query("
-    SELECT p.nome, SUM(m.quantidade) as total_saida
-    FROM produtos p
-    JOIN movimentacoes m ON p.id = m.produto_id
-    WHERE m.tipo = 'Saida' AND m.data_movimentacao >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-    GROUP BY p.id
-    ORDER BY total_saida DESC LIMIT 3
-")->fetchAll();
-if (count($altaRotatividade) > 0) {
-    $nomesAlta = implode(", ", array_column($altaRotatividade, 'nome'));
-    $insights[] = [
-        'tipo' => 'info',
-        'icone' => 'fa-bolt',
-        'cor' => '#3b82f6',
-        'titulo' => 'Picos de Consumo Recentes',
-        'mensagem' => "Nos últimos 7 dias, observei um alto volume de saídas para os itens: <b>$nomesAlta</b>. Recomendo aumentar o estoque mínimo de segurança destes produtos para evitar faltas imprevistas."
-    ];
-}
-$totalFornecedores = $pdo->query("SELECT COUNT(*) FROM fornecedores")->fetchColumn() ?: 0;
-if ($totalFornecedores == 0) {
-    $insights[] = [
-        'tipo' => 'alerta',
-        'icone' => 'fa-truck-slash',
-        'cor' => '#ef4444',
-        'titulo' => 'Falta de Fornecedores',
-        'mensagem' => "Notei que você não possui fornecedores cadastrados. O cadastro de fornecedores é vital para que eu possa gerar pedidos de compra automáticos no futuro."
-    ];
-}
+
 $stmtComandos = $pdo->query("SELECT comando as cmd, descricao as `desc`, icone as icon, cor FROM ia_comandos ORDER BY comando ASC");
 $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -635,16 +572,7 @@ $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
                 Otimizado para Comandos (/)
             </div>
         </header>
-        <p style="color: #c4c7c5; font-size: 1.1rem; line-height: 1.5;">Olá, <?= htmlspecialchars($_SESSION['usuario_nome'] ?? 'Gestor') ?>. O sistema foi otimizado para não pesquisar coisas aleatórias. Agora você controla tudo através de <b>comandos que começam com a barra (/)</b>. Digite / no chat para ver a lista ou digite /ajuda.</p>
-        <div class="insights-container">
-            <?php foreach($insights as $index => $insight): ?>
-                <div class="insight-card">
-                    <i class="fa <?= $insight['icone'] ?> insight-icon" style="color: <?= $insight['cor'] ?>;"></i>
-                    <h3><?= $insight['titulo'] ?></h3>
-                    <p><?= $insight['mensagem'] ?></p>
-                </div>
-            <?php endforeach; ?>
-        </div>
+
         <div class="ai-chat-section">
             <div class="chat-messages" id="chatMessages">
                 <div class="message-wrapper ai">
