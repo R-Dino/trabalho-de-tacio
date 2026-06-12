@@ -15,22 +15,44 @@ if (isset($_GET['excluir'])) {
     header("Location: produtos.php");
     exit;
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'adicionar') {
-    $nome = trim($_POST['nome']);
-    $quantidade = (int)$_POST['quantidade'];
-    $preco = (float)$_POST['preco'];
-    $categoria_id = (int)$_POST['categoria_id'];
-    if (!empty($nome) && $categoria_id > 0) {
-        $status = 'Disponível';
-        if ($quantidade == 0) {
-            $status = 'Zerado';
-        } elseif ($quantidade <= 20) {
-            $status = 'Baixo';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
+    if ($_POST['acao'] === 'adicionar') {
+        $nome = trim($_POST['nome']);
+        $quantidade = (int)$_POST['quantidade'];
+        $preco = (float)$_POST['preco'];
+        $categoria_id = (int)$_POST['categoria_id'];
+        if (!empty($nome) && $categoria_id > 0) {
+            $status = 'Disponível';
+            if ($quantidade == 0) {
+                $status = 'Zerado';
+            } elseif ($quantidade <= 20) {
+                $status = 'Baixo';
+            }
+            $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco, categoria_id, status) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$nome, $quantidade, $preco, $categoria_id, $status]);
+            $_SESSION['msg_sucesso'] = "Produto adicionado com sucesso!";
+            header("Location: produtos.php");
+            exit;
         }
-        $stmt = $pdo->prepare("INSERT INTO produtos (nome, quantidade, preco, categoria_id, status) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$nome, $quantidade, $preco, $categoria_id, $status]);
-        header("Location: produtos.php");
-        exit;
+    } elseif ($_POST['acao'] === 'editar') {
+        $id = (int)$_POST['id_produto'];
+        $nome = trim($_POST['nome']);
+        $quantidade = (int)$_POST['quantidade'];
+        $preco = (float)$_POST['preco'];
+        $categoria_id = (int)$_POST['categoria_id'];
+        if ($id > 0 && !empty($nome) && $categoria_id > 0) {
+            $status = 'Disponível';
+            if ($quantidade == 0) {
+                $status = 'Zerado';
+            } elseif ($quantidade <= 20) {
+                $status = 'Baixo';
+            }
+            $stmt = $pdo->prepare("UPDATE produtos SET nome = ?, quantidade = ?, preco = ?, categoria_id = ?, status = ? WHERE id = ?");
+            $stmt->execute([$nome, $quantidade, $preco, $categoria_id, $status, $id]);
+            $_SESSION['msg_sucesso'] = "Produto atualizado com sucesso!";
+            header("Location: produtos.php");
+            exit;
+        }
     }
 }
 $categorias = $pdo->query("SELECT * FROM categorias ORDER BY nome ASC")->fetchAll();
