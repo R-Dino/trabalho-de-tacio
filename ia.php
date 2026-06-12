@@ -9,7 +9,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $pergunta = strtolower(trim($_POST['pergunta']));
     $response = ['html' => '', 'handled' => false];
     
-    if (!str_starts_with($pergunta, '/')) {
+    $isAdminCommand = preg_match('/^\/(banir|desbanir|promover|rebaixar|usuarios|deletar)(\s|$)/i', $pergunta);
+    if ($isAdminCommand && $_SESSION['nivel_acesso'] !== 'admin') {
+        $response['html'] = "<b><i class='fa fa-lock' style='color:#ef4444;'></i> Acesso Negado:</b> Você não tem permissão para usar comandos de administrador.";
+        $response['handled'] = true;
+    }
+    elseif (!str_starts_with($pergunta, '/')) {
         $response['html'] = "<b>Erro:</b> Utilize a barra '/' antes do comando (Ex: /ajuda).";
         $response['handled'] = true;
     }
@@ -306,7 +311,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-$stmtComandos = $pdo->query("SELECT comando as cmd, descricao as `desc`, icone as icon, cor FROM ia_comandos ORDER BY comando ASC");
+if (isset($_SESSION['nivel_acesso']) && $_SESSION['nivel_acesso'] === 'admin') {
+    $stmtComandos = $pdo->query("SELECT comando as cmd, descricao as `desc`, icone as icon, cor FROM ia_comandos ORDER BY comando ASC");
+} else {
+    $stmtComandos = $pdo->query("SELECT comando as cmd, descricao as `desc`, icone as icon, cor FROM ia_comandos WHERE nivel_acesso = 'comum' ORDER BY comando ASC");
+}
 $comandos_db = $stmtComandos->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>

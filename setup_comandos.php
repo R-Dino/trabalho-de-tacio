@@ -7,7 +7,8 @@ try {
         comando VARCHAR(50) NOT NULL UNIQUE,
         descricao VARCHAR(255) NOT NULL,
         icone VARCHAR(50) NOT NULL,
-        cor VARCHAR(20) NOT NULL
+        cor VARCHAR(20) NOT NULL,
+        nivel_acesso ENUM('admin', 'comum') NOT NULL DEFAULT 'comum'
     )");
 
     $comandos = [
