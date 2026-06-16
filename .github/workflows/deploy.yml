@@ -1,0 +1,32 @@
+name: Deploy Automático para InfinityFree
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  web-deploy:
+    name: 🎉 Sincronizando arquivos com o servidor...
+    runs-on: ubuntu-latest
+    steps:
+    - name: 🚚 Pegar os arquivos mais recentes do GitHub
+      uses: actions/checkout@v4
+    
+    - name: 📂 Enviar arquivos via FTP para a InfinityFree
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ftpupload.net
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./
+        server-dir: /almoxarifadoteste.fwh.is/htdocs/
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/.vscode/**
+          **.sql
+          LIGAR_SISTEMA.bat
+          README.md
+          cria_usuario.php
+          db.php
